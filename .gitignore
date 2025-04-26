@@ -5,6 +5,7 @@
 ## User settings
 xcuserdata/
 
+<<<<<<< HEAD
 ## compatibility with Xcode 8 and earlier (ignoring not required starting Xcode 9)
 *.xcscmblueprint
 *.xccheckout
@@ -22,6 +23,8 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 
+=======
+>>>>>>> 10de03b79e512552495606d02680f0b67f7e6867
 ## Obj-C/Swift specific
 *.hmap
 
@@ -66,6 +69,7 @@ playground.xcworkspace
 
 Carthage/Build/
 
+<<<<<<< HEAD
 # Accio dependency management
 Dependencies/
 .accio/
@@ -73,6 +77,11 @@ Dependencies/
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repository.
+=======
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo.
+>>>>>>> 10de03b79e512552495606d02680f0b67f7e6867
 # Instead, use fastlane to re-generate the screenshots whenever they are needed.
 # For more information about the recommended setup visit:
 # https://docs.fastlane.tools/best-practices/source-control/#source-control
@@ -81,6 +90,7 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+<<<<<<< HEAD
 
 # Code Injection
 #
@@ -93,3 +103,5 @@ iOSInjectionProject/
 .DS_Store
 .AppleDouble
 .LSOverride 
+=======
+>>>>>>> 10de03b79e512552495606d02680f0b67f7e6867
