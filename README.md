@@ -35,10 +35,13 @@
 - Efficient caching system
 - Minimal resource usage
 
-🔒 **Security**
-- No analytics or tracking
+🔒 **Security & Privacy**
+- Optional analytics (disabled by default)
 - Open source and transparent
 - Secure credential handling
+- No collection of sensitive data
+- Full user control over data sharing
+- See our [Privacy Policy](PRIVACY.md) for details
 
 ## Screenshots
 
