@@ -316,6 +316,7 @@ class HomebrewManager: ObservableObject {
         return (services, update)
     }
     
+    @MainActor
     func refreshTaps() async throws {
         logger.info("Refreshing taps list")
         do {
@@ -323,27 +324,35 @@ class HomebrewManager: ObservableObject {
             let lines = output.components(separatedBy: .newlines)
             var newTaps: [HomebrewTap] = []
             var newTapInfos: [String: TapInfo] = [:]
+            
             for line in lines where !line.isEmpty {
                 let components = line.components(separatedBy: "/")
                 guard components.count == 2 else {
                     logger.warning("Skipping invalid tap line: \(line)")
                     continue
                 }
+                
                 let name = components[0]
                 let repo = components[1]
                 let tapName = "\(name)/\(repo)"
                 let url = "https://github.com/\(name)/homebrew-\(repo)"
                 logger.debug("Processing tap: \(tapName)")
+                
                 let tap = HomebrewTap(
                     name: tapName,
                     url: url,
                     installed: true
                 )
                 newTaps.append(tap)
+                
                 // 获取 tap-info
                 do {
                     let infoOutput = try await executeBrewCommand("tap-info \(tapName)")
+                    logger.debug("Raw tap-info output for \(tapName): \(infoOutput)")
+                    
                     let parsed = parseTapInfo(infoOutput)
+                    logger.debug("Parsed tap-info for \(tapName): status=\(parsed.status ?? "nil"), commands=\(parsed.commands ?? "nil"), casks=\(parsed.casks ?? "nil")")
+                    
                     let tapInfo = TapInfo(
                         name: tapName,
                         url: url,
@@ -362,16 +371,37 @@ class HomebrewManager: ObservableObject {
                         filesSize: parsed.filesSize
                     )
                     newTapInfos[tapName] = tapInfo
+                    logger.debug("Successfully created TapInfo for \(tapName)")
                 } catch {
                     logger.error("Failed to get tap-info for \(tapName): \(error.localizedDescription)")
+                    // 创建一个基本的 TapInfo，至少保留基本信息
+                    let basicTapInfo = TapInfo(
+                        name: tapName,
+                        url: url,
+                        installed: true,
+                        info: "Failed to fetch info: \(error.localizedDescription)",
+                        status: nil,
+                        commands: nil,
+                        casks: nil,
+                        path: nil,
+                        head: nil,
+                        lastCommit: nil,
+                        repoURL: nil,
+                        branch: nil,
+                        filesPath: nil,
+                        filesCount: nil,
+                        filesSize: nil
+                    )
+                    newTapInfos[tapName] = basicTapInfo
                 }
             }
-            await MainActor.run {
-                self.taps = newTaps
-                self.tapInfos = newTapInfos
-            }
+            
+            // 更新状态和保存缓存
+            self.taps = newTaps
+            self.tapInfos = newTapInfos
             saveTapInfosToCache(newTapInfos)
-            logger.info("Successfully refreshed \(self.taps.count) taps and tapInfos")
+            
+            logger.info("Successfully refreshed \(self.taps.count) taps and \(newTapInfos.count) tapInfos")
         } catch {
             logger.error("Failed to refresh taps: \(error.localizedDescription)")
             throw error
@@ -393,53 +423,73 @@ class HomebrewManager: ObservableObject {
         var filesCount: Int? = nil
         var filesSize: String? = nil
         
+        logger.debug("Parsing tap info output with \(lines.count) lines")
+        
         for line in lines {
-            if line.contains(": Installed") || line.contains(": Not installed") {
-                status = line
-            } else if line.contains("commands") || line.contains("casks") {
-                let parts = line.components(separatedBy: ",")
-                if parts.count == 2 {
-                    commands = parts[0].trimmingCharacters(in: .whitespaces)
-                    casks = parts[1].trimmingCharacters(in: .whitespaces)
-                }
-            } else if line.hasPrefix("/") {
-                // 解析路径行，格式如：/opt/homebrew/Library/Taps/xcodesorg/homebrew-made (27 files, 15.9KB)
-                if let pathEndIndex = line.firstIndex(of: "(") {
-                    let pathPart = line[..<pathEndIndex].trimmingCharacters(in: .whitespaces)
-                    filesPath = String(pathPart)
-                    
-                    // 解析括号内的文件信息
-                    let infoStart = line.index(after: pathEndIndex)
-                    if let infoEnd = line.lastIndex(of: ")"),
-                       infoEnd > infoStart {
-                        let infoString = line[infoStart..<infoEnd]
-                        let infoParts = infoString.components(separatedBy: ",")
-                        
-                        if infoParts.count == 2 {
-                            // 解析文件数量
-                            let filesString = infoParts[0].trimmingCharacters(in: .whitespaces)
-                            if let count = Int(filesString.components(separatedBy: " ")[0]) {
-                                filesCount = count
-                            }
-                            
-                            // 解析文件大小
-                            filesSize = infoParts[1].trimmingCharacters(in: .whitespaces)
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            logger.debug("Processing line: \(trimmedLine)")
+            
+            // 处理状态行，格式如 "zurawiki/brews: Installed"
+            if trimmedLine.contains(": Installed") {
+                status = "Installed"
+            }
+            // 处理命令行，格式如 "2 formulae"
+            else if trimmedLine.hasSuffix("formulae") {
+                commands = trimmedLine
+            }
+            // 处理路径和文件信息，格式如 "/opt/homebrew/Library/Taps/zurawiki/homebrew-brews (83 files, 65.7KB)"
+            else if trimmedLine.hasPrefix("/") {
+                let components = trimmedLine.components(separatedBy: " (")
+                if components.count == 2 {
+                    path = components[0]
+                    let fileInfo = components[1].replacingOccurrences(of: ")", with: "")
+                    let fileComponents = fileInfo.components(separatedBy: ", ")
+                    if fileComponents.count == 2 {
+                        if let count = fileComponents[0].components(separatedBy: " ").first {
+                            filesCount = Int(count)
                         }
+                        filesSize = fileComponents[1]
                     }
-                } else {
-                    // 如果没有括号，就把整行当作路径
-                    filesPath = line
                 }
-            } else if line.hasPrefix("From: ") {
-                repoURL = line.replacingOccurrences(of: "From: ", with: "")
-            } else if line.hasPrefix("HEAD: ") {
-                head = line.replacingOccurrences(of: "HEAD: ", with: "")
-            } else if line.hasPrefix("last commit: ") {
-                lastCommit = line.replacingOccurrences(of: "last commit: ", with: "")
-            } else if line.contains("branch: ") {
-                branch = line.replacingOccurrences(of: "branch: ", with: "").trimmingCharacters(in: .whitespaces)
+            }
+            // 处理仓库 URL，格式如 "From: https://github.com/zurawiki/homebrew-brews"
+            else if trimmedLine.hasPrefix("From:") {
+                repoURL = trimmedLine.replacingOccurrences(of: "From:", with: "").trimmingCharacters(in: .whitespaces)
+            }
+            // 处理 HEAD，格式如 "HEAD: 1052ce0405fe5b2cc82ba8ac86e9b57b14b0ec30"
+            else if trimmedLine.hasPrefix("HEAD:") {
+                head = trimmedLine.replacingOccurrences(of: "HEAD:", with: "").trimmingCharacters(in: .whitespaces)
+            }
+            // 处理最后提交时间，格式如 "last commit: 7 months ago"
+            else if trimmedLine.hasPrefix("last commit:") {
+                lastCommit = trimmedLine.replacingOccurrences(of: "last commit:", with: "").trimmingCharacters(in: .whitespaces)
+            }
+            // 处理分支信息，格式如 "branch: main"
+            else if trimmedLine.hasPrefix("branch:") {
+                branch = trimmedLine.replacingOccurrences(of: "branch:", with: "").trimmingCharacters(in: .whitespaces)
             }
         }
+        
+        // 从路径中提取 files path
+        if let tapPath = path {
+            filesPath = tapPath
+        }
+        
+        logger.debug("""
+            Parsed tap info results:
+            - Status: \(status ?? "nil")
+            - Commands: \(commands ?? "nil")
+            - Casks: \(casks ?? "nil")
+            - Path: \(path ?? "nil")
+            - Head: \(head ?? "nil")
+            - Last Commit: \(lastCommit ?? "nil")
+            - Repo URL: \(repoURL ?? "nil")
+            - Branch: \(branch ?? "nil")
+            - Files Path: \(filesPath ?? "nil")
+            - Files Count: \(String(describing: filesCount))
+            - Files Size: \(filesSize ?? "nil")
+            """)
+        
         return (status, commands, casks, path, head, lastCommit, repoURL, branch, filesPath, filesCount, filesSize)
     }
     
