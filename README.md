@@ -4,14 +4,14 @@
   <!-- <img src="Kettle/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" height="128" alt="Kettle Logo"> -->
   <h3>A Modern Homebrew GUI Manager for macOS</h3>
   <p>
-    <a href="https://github.com/eskiyin/Kettle/releases/latest">
-      <img src="https://img.shields.io/github/v/release/eskiyin/Kettle" alt="Latest Release">
+    <a href="https://github.com/Geoion/Kettle/releases/latest">
+      <img src="https://img.shields.io/github/v/release/Geoion/Kettle" alt="Latest Release">
     </a>
-    <a href="https://github.com/eskiyin/Kettle/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/eskiyin/Kettle" alt="License">
+    <a href="https://github.com/Geoion/Kettle/blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/Geoion/Kettle" alt="License">
     </a>
-    <a href="https://github.com/eskiyin/Kettle/stargazers">
-      <img src="https://img.shields.io/github/stars/eskiyin/Kettle" alt="Stars">
+    <a href="https://github.com/Geoion/Kettle/stargazers">
+      <img src="https://img.shields.io/github/stars/Geoion/Kettle" alt="Stars">
     </a>
   </p>
 </div>
@@ -51,14 +51,14 @@
 - Homebrew installed on your system
 
 ### Download
-1. Download the latest version from the [Releases](https://github.com/eskiyin/Kettle/releases) page
+1. Download the latest version from the [Releases](https://github.com/Geoion/Kettle/releases) page
 2. Open the DMG file
 3. Drag Kettle to your Applications folder
 
 ### Build from Source
 ```bash
 # Clone the repository
-git clone https://github.com/eskiyin/Kettle.git
+git clone https://github.com/Geoion/Kettle.git
 
 # Navigate to the project directory
 cd Kettle
@@ -124,7 +124,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 If you encounter any issues or have questions:
-- Open an [issue](https://github.com/eskiyin/Kettle/issues)
-- Check our [Discussions](https://github.com/eskiyin/Kettle/discussions) page
-- Read the [Wiki](https://github.com/eskiyin/Kettle/wiki)
+- Open an [issue](https://github.com/Geoion/Kettle/issues)
+- Check our [Discussions](https://github.com/Geoion/Kettle/discussions) page
+- Read the [Wiki](https://github.com/Geoion/Kettle/wiki)
 
