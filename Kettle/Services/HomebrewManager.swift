@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import OSLog
 import Combine
+import AppKit
 
 struct TapInfo: Codable, Hashable {
     let name: String
@@ -25,6 +26,7 @@ struct TapInfo: Codable, Hashable {
 class HomebrewManager: ObservableObject {
     @Published var isHomebrewInstalled = false
     @Published var packages: [HomebrewPackage] = []
+    @Published var casks: [HomebrewCask] = []
     @Published var services: [HomebrewService] = []
     @Published var taps: [HomebrewTap] = []
     @Published var tapInfos: [String: TapInfo] = [:]
@@ -32,6 +34,7 @@ class HomebrewManager: ObservableObject {
     @Published var isLoadingTaps: Bool = false
     @Published var isLoadingServices: Bool = false
     @Published var isLoadingPackages: Bool = false
+    @Published var isLoadingCasks: Bool = false
     
     private let fileManager = FileManager.default
     private let logger = Logger(subsystem: "com.kettle.app", category: "Homebrew")
@@ -39,6 +42,10 @@ class HomebrewManager: ObservableObject {
     private let cacheDirectory: URL
     private let tapsCacheFile: URL
     private let servicesCacheFile: URL
+    private let packagesCacheKey = "cachedPackages"
+    private let packagesUpdateKey = "cachedPackagesUpdate"
+    private let casksCacheKey = "cachedCasks"
+    private let casksUpdateKey = "cachedCasksUpdate"
     
     init() {
         // Cache setup
@@ -60,6 +67,8 @@ class HomebrewManager: ObservableObject {
         if isHomebrewInstalled {
              loadTapsFromCache()
              loadServicesFromCache()
+             loadPackagesFromCache()
+             loadCasksFromCache()
         }
     }
     
@@ -214,55 +223,49 @@ class HomebrewManager: ObservableObject {
         }
     }
     
+    @MainActor
     func refreshPackages() async throws {
-        logger.info("Refreshing packages list")
+        logger.info("Refreshing packages list using 'brew list --formula'")
+        isLoadingPackages = true
         do {
-            let output = try await executeBrewCommand("list --versions")
-            let lines = output.components(separatedBy: .newlines)
-            var newPackages: [HomebrewPackage] = []
-            for line in lines where !line.isEmpty {
-                let components = line.components(separatedBy: " ")
-                guard components.count >= 2 else {
-                    logger.error("Skipping invalid package line: \(line)")
-                    continue
-                }
-                let name = components[0]
-                let version = components[1]
-                logger.debug("Processing package: \(name) (\(version))")
-                do {
-                    let infoOutput = try await executeBrewCommand("info \(name)")
-                    let infoLines = infoOutput.components(separatedBy: .newlines)
-                    var description: String?
-                    var dependencies: [String] = []
-                    for infoLine in infoLines {
-                        if infoLine.hasPrefix("==> Description:") {
-                            description = infoLine.replacingOccurrences(of: "==> Description:", with: "").trimmingCharacters(in: .whitespaces)
-                        } else if infoLine.hasPrefix("==> Dependencies") {
-                            let deps = infoLine.replacingOccurrences(of: "==> Dependencies:", with: "").trimmingCharacters(in: .whitespaces)
-                            dependencies = deps.components(separatedBy: ", ").map { $0.trimmingCharacters(in: .whitespaces) }
-                        }
-                    }
-                    let package = HomebrewPackage(
-                        name: name,
-                        version: version,
-                        installed: true,
-                        dependencies: dependencies,
-                        description: description
-                    )
-                    newPackages.append(package)
-                } catch {
-                    logger.error("Failed to get info for package \(name): \(error.localizedDescription)")
-                    throw HomebrewError.parsingFailed("Failed to parse package info for \(name)")
-                }
+            let output = try await executeBrewCommand("list --formula")
+            let lines = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
+            // Create basic package objects - details would require `brew info` per package (slow)
+            self.packages = lines.map { name in 
+                HomebrewPackage(name: name, version: "", installed: true, dependencies: [], description: nil)
             }
-            await MainActor.run {
-                self.packages = newPackages
-            }
-            logger.info("Successfully refreshed \(self.packages.count) packages")
+            savePackagesToCache(self.packages)
+            logger.info("Successfully refreshed \(self.packages.count) packages (names only)")
         } catch {
             logger.error("Failed to refresh packages: \(error.localizedDescription)")
+            // Don't clear existing packages on failure, maybe show error in UI
             throw error
         }
+        isLoadingPackages = false
+    }
+    
+    func savePackagesToCache(_ packages: [HomebrewPackage]) {
+        if let data = try? JSONEncoder().encode(packages) {
+            UserDefaults.standard.set(data, forKey: packagesCacheKey)
+            UserDefaults.standard.set(Date(), forKey: packagesUpdateKey)
+        } else {
+             logger.error("Failed to encode packages for caching.")
+        }
+    }
+    
+    func loadPackagesFromCache() -> ([HomebrewPackage], Date?)? {
+        guard let data = UserDefaults.standard.data(forKey: packagesCacheKey),
+              let pkgs = try? JSONDecoder().decode([HomebrewPackage].self, from: data) else { 
+            logger.info("No package cache found or failed to decode.")
+            return nil 
+        }
+        let update = UserDefaults.standard.object(forKey: packagesUpdateKey) as? Date
+        logger.info("Loaded \(pkgs.count) packages from cache.")
+        // Update published property on load
+        Task { @MainActor in 
+            self.packages = pkgs
+        }
+        return (pkgs, update)
     }
     
     @MainActor
@@ -616,9 +619,13 @@ class HomebrewManager: ObservableObject {
     
     func loadTapsFromCache() -> ([HomebrewTap], Date?)? {
         guard let data = UserDefaults.standard.data(forKey: "cachedTaps"),
-              let taps = try? JSONDecoder().decode([HomebrewTap].self, from: data) else { return nil }
+              let loadedTaps = try? JSONDecoder().decode([HomebrewTap].self, from: data) else { return nil }
         let update = UserDefaults.standard.object(forKey: "cachedTapsUpdate") as? Date
-        return (taps, update)
+         Task { @MainActor in 
+            self.taps = loadedTaps
+            self.tapInfos = loadTapInfosFromCache()
+         }
+        return (loadedTaps, update)
     }
 
     func saveTapsToCache(_ taps: [HomebrewTap], lastUpdate: Date?) {
@@ -658,7 +665,6 @@ class HomebrewManager: ObservableObject {
         
         // Make sure handlers are released
         var stdoutHandler: NSObjectProtocol?
-        var stderrHandler: NSObjectProtocol?
         
         stdoutPipe.fileHandleForReading.readabilityHandler = { fileHandle in
             let data = fileHandle.availableData
@@ -698,7 +704,6 @@ class HomebrewManager: ObservableObject {
             stdoutPipe.fileHandleForReading.readabilityHandler = nil
             stderrPipe.fileHandleForReading.readabilityHandler = nil
             if let handler = stdoutHandler { NotificationCenter.default.removeObserver(handler) }
-            if let handler = stderrHandler { NotificationCenter.default.removeObserver(handler) }
             // print("Process terminated with status: \(terminatedProcess.terminationStatus)") // Debug
             DispatchQueue.main.async {
                  onCompletion(terminatedProcess.terminationStatus)
@@ -721,6 +726,46 @@ class HomebrewManager: ObservableObject {
         }
     }
     // --- End New Streaming Method ---
+
+    @MainActor
+    func refreshCasks() async throws {
+        logger.info("Refreshing casks list using 'brew list --cask'")
+        isLoadingCasks = true
+        do {
+            let output = try await executeBrewCommand("list --cask")
+            let lines = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
+            self.casks = lines.map { HomebrewCask(name: $0) }
+            saveCasksToCache(self.casks)
+            logger.info("Successfully refreshed \(self.casks.count) casks")
+        } catch {
+             logger.error("Failed to refresh casks: \(error.localizedDescription)")
+             throw error
+        }
+        isLoadingCasks = false
+    }
+
+    func saveCasksToCache(_ casks: [HomebrewCask]) {
+        if let data = try? JSONEncoder().encode(casks) {
+            UserDefaults.standard.set(data, forKey: casksCacheKey)
+            UserDefaults.standard.set(Date(), forKey: casksUpdateKey)
+        } else {
+             logger.error("Failed to encode casks for caching.")
+        }
+    }
+
+    func loadCasksFromCache() -> ([HomebrewCask], Date?)? {
+         guard let data = UserDefaults.standard.data(forKey: casksCacheKey),
+              let cks = try? JSONDecoder().decode([HomebrewCask].self, from: data) else { 
+            logger.info("No cask cache found or failed to decode.")
+            return nil 
+        }
+        let update = UserDefaults.standard.object(forKey: casksUpdateKey) as? Date
+        logger.info("Loaded \(cks.count) casks from cache.")
+         Task { @MainActor in 
+            self.casks = cks
+        }
+        return (cks, update)
+    }
 }
 
 // 错误类型

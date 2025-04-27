@@ -1,4 +1,6 @@
 import SwiftUI
+import Foundation
+import AppKit
 
 struct ContentView: View {
     @EnvironmentObject var settings: AppSettings
@@ -17,6 +19,7 @@ struct ContentView: View {
     @State private var isRefreshing = false
     @Environment(\.colorScheme) private var colorScheme
     @State private var viewID = UUID()
+    @State private var showingChangelog = false
     
     enum Tab: Hashable {
         case taps, packages, casks, services, settings
@@ -597,20 +600,103 @@ struct TapDetailPanel: View {
 struct PackageListPanel: View {
     @EnvironmentObject var homebrewManager: HomebrewManager
     @Binding var selectedPackage: HomebrewPackage?
+    @State private var cachedPackages: [HomebrewPackage] = []
+    @State private var lastUpdate: Date? = nil
+    @State private var searchText = ""
+    @State private var isRefreshing = false
+    @State private var errorMessage: String? = nil
+    
+    var filteredPackages: [HomebrewPackage] {
+        if searchText.isEmpty { return cachedPackages } else { return cachedPackages.filter { $0.name.localizedCaseInsensitiveContains(searchText) } }
+    }
     
     var body: some View {
-        List(selection: $selectedPackage) {
-            ForEach(homebrewManager.packages) { pkg in
-                Text(pkg.name)
+        VStack(spacing: 0) {
+            TextField(NSLocalizedString("packages.searchPlaceholder", comment: "Search packages placeholder"), text: $searchText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding([.horizontal, .top], 8)
+            
+            List(selection: $selectedPackage) {
+                if filteredPackages.isEmpty {
+                    Text(searchText.isEmpty ? NSLocalizedString("packages.noneAvailable", comment: "No packages available") : NSLocalizedString("packages.noResults", comment: "No search results"))
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(filteredPackages) { pkg in
+                        Text(pkg.name)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .padding(.vertical, 4)
+                            .background(selectedPackage?.id == pkg.id ? Color.accentColor.opacity(0.15) : Color.clear)
+                            .onTapGesture { 
+                                selectedPackage = pkg 
+                            }
+                    }
+                }
+            }
+            .listStyle(PlainListStyle())
+            .scrollContentBackground(.hidden)
+            
+            Divider()
+            HStack {
+                Text("\(NSLocalizedString("common.lastUpdated", comment: "Last updated prefix")): " + (lastUpdate?.formatted() ?? NSLocalizedString("common.unknown", comment: "Unknown status")))
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                Spacer()
+                 Text("\(cachedPackages.count) \(NSLocalizedString("common.items", comment: "items count suffix"))")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+            .background(Color(nsColor: .windowBackgroundColor))
+            
+            if let error = errorMessage {
+                 Text(error)
+                    .foregroundColor(.red)
+                    .font(.footnote)
+                    .padding(.horizontal)
+                    .padding(.bottom, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .padding(.vertical, 4)
-                    .background(selectedPackage == pkg ? Color.accentColor.opacity(0.15) : Color.clear)
+                    .background(Color(nsColor: .windowBackgroundColor))
             }
         }
-        .listStyle(PlainListStyle())
-        .scrollContentBackground(.hidden)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear {
+            if cachedPackages.isEmpty {
+                if let (pkgs, update) = homebrewManager.loadPackagesFromCache() {
+                    cachedPackages = pkgs
+                    lastUpdate = update
+                } else {
+                    triggerRefresh()
+                }
+            }
+            cachedPackages = homebrewManager.packages
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ContentView.NotificationName.refreshPackages)) { _ in
+            triggerRefresh()
+        }
+        .onReceive(homebrewManager.$packages) { updatedPackages in
+             if !isRefreshing { cachedPackages = updatedPackages }
+         }
+        .onReceive(homebrewManager.$isLoadingPackages) { loading in
+            isRefreshing = loading
+        }
+    }
+    
+    private func triggerRefresh() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        errorMessage = nil
+        Task {
+            do {
+                try await homebrewManager.refreshPackages()
+                cachedPackages = homebrewManager.packages
+                lastUpdate = Date()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isRefreshing = false
+        }
     }
 }
 
@@ -1605,30 +1691,106 @@ extension Notification.Name {
 
 // --- Add Placeholder Cask Views --- 
 
-// Placeholder for Cask model (replace with actual model later)
-struct HomebrewCask: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    // Add other properties as needed (version, description, etc.)
-}
-
 struct CaskListPanel: View {
-    @EnvironmentObject var homebrewManager: HomebrewManager // Assuming manager will handle casks
+    @EnvironmentObject var homebrewManager: HomebrewManager
     @Binding var selectedCask: HomebrewCask?
-    // Add state for cask list, search, etc. later
-    
+    @State private var cachedCasks: [HomebrewCask] = []
+    @State private var lastUpdate: Date? = nil
+    @State private var searchText = ""
+    @State private var isRefreshing = false
+    @State private var errorMessage: String? = nil
+
+    var filteredCasks: [HomebrewCask] {
+        if searchText.isEmpty { return cachedCasks } else { return cachedCasks.filter { $0.name.localizedCaseInsensitiveContains(searchText) } }
+    }
+
     var body: some View {
-        // Replace with actual List later
-        List {
-             Text("Cask List Placeholder")
+        VStack(spacing: 0) {
+            TextField(NSLocalizedString("casks.searchPlaceholder", comment: "Search casks placeholder"), text: $searchText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding([.horizontal, .top], 8)
+
+            List(selection: $selectedCask) {
+                if filteredCasks.isEmpty {
+                    Text(searchText.isEmpty ? NSLocalizedString("casks.noneAvailable", comment: "No casks available") : NSLocalizedString("casks.noResults", comment: "No search results"))
+                        .foregroundColor(.secondary)
+                } else {
+                    ForEach(filteredCasks) { cask in
+                        Text(cask.name)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                            .padding(.vertical, 4)
+                            .background(selectedCask?.id == cask.id ? Color.accentColor.opacity(0.15) : Color.clear)
+                            .onTapGesture { 
+                                selectedCask = cask 
+                            }
+                    }
+                }
+            }
+            .listStyle(PlainListStyle())
+            .scrollContentBackground(.hidden)
+
+            Divider()
+            HStack {
+                Text("\(NSLocalizedString("common.lastUpdated", comment: "Last updated prefix")): " + (lastUpdate?.formatted() ?? NSLocalizedString("common.unknown", comment: "Unknown status")))
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                Spacer()
+                 Text("\(cachedCasks.count) \(NSLocalizedString("common.items", comment: "items count suffix"))")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+            .background(Color(nsColor: .windowBackgroundColor))
+            
+            if let error = errorMessage {
+                 Text(error)
+                    .foregroundColor(.red)
+                    .font(.footnote)
+                    .padding(.horizontal)
+                    .padding(.bottom, 6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(nsColor: .windowBackgroundColor))
+            }
         }
-        .listStyle(PlainListStyle())
-        .scrollContentBackground(.hidden)
         .background(Color(nsColor: .windowBackgroundColor))
-         .onReceive(NotificationCenter.default.publisher(for: ContentView.NotificationName.refreshCasks)) { _ in
-             // Add refresh logic here later
-             print("Received refresh casks notification")
+        .onAppear {
+            if cachedCasks.isEmpty {
+                if let (cks, update) = homebrewManager.loadCasksFromCache() {
+                    cachedCasks = cks
+                    lastUpdate = update
+                } else {
+                    triggerRefresh()
+                }
+            }
+            cachedCasks = homebrewManager.casks
+        }
+        .onReceive(NotificationCenter.default.publisher(for: ContentView.NotificationName.refreshCasks)) { _ in
+            triggerRefresh()
+        }
+        .onReceive(homebrewManager.$casks) { updatedCasks in
+             if !isRefreshing { cachedCasks = updatedCasks }
          }
+        .onReceive(homebrewManager.$isLoadingCasks) { loading in
+            isRefreshing = loading
+        }
+    }
+
+    private func triggerRefresh() {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        errorMessage = nil
+        Task {
+            do {
+                try await homebrewManager.refreshCasks()
+                cachedCasks = homebrewManager.casks
+                lastUpdate = Date()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isRefreshing = false
+        }
     }
 }
 
@@ -1644,3 +1806,70 @@ struct CaskDetailPanel: View {
 }
 
 // --- End Placeholder Cask Views --- 
+
+// --- Add ChangelogView --- 
+struct ChangelogView: View {
+    @Environment(\.dismiss) var dismiss
+    @State private var attributedChangelog = AttributedString("Loading changelog...") // State for rendered Markdown
+    @State private var errorMessage: String? = nil
+
+    var body: some View {
+        VStack(spacing: 0) { 
+            Text(NSLocalizedString("changelog.title", comment: "Changelog View Title"))
+                .font(.headline)
+                .padding(.top)
+                .padding(.bottom, 8)
+
+            Divider()
+
+            ScrollView { 
+                if let error = errorMessage {
+                    Text("Error loading changelog: \(error)")
+                        .foregroundColor(.red)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading) 
+                } else {
+                    Text(attributedChangelog) // Display AttributedString
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+            }
+            
+            Divider()
+            
+            HStack {
+                Spacer() // Push button to the right
+                Button(NSLocalizedString("common.close", comment: "Close button")) {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction) // Allow Esc key to close
+            }
+            .padding()
+
+        }
+        .frame(minWidth: 500, idealWidth: 600, minHeight: 300, idealHeight: 450) 
+        .onAppear {
+            loadChangelog()
+        }
+    }
+
+    private func loadChangelog() {
+        guard let url = Bundle.main.url(forResource: "CHANGELOG", withExtension: "md") else {
+            errorMessage = "CHANGELOG.md not found in bundle."
+            attributedChangelog = AttributedString(errorMessage!)
+            return
+        }
+        
+        do {
+            let markdownString = try String(contentsOf: url, encoding: .utf8)
+            // Convert Markdown string to AttributedString
+            attributedChangelog = try AttributedString(markdown: markdownString, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace))
+            errorMessage = nil
+        } catch {
+            errorMessage = "Failed to load or parse CHANGELOG.md: \(error.localizedDescription)"
+             attributedChangelog = AttributedString(errorMessage!)
+        }
+    }
+}
+// --- End ChangelogView --- 
