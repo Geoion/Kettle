@@ -8,10 +8,12 @@
 // Main Menu
 "menu.taps" = "软件源";
 "menu.packages" = "软件包";
+"menu.casks" = "应用";
 "menu.services" = "服务";
 "menu.settings" = "设置";
 "menu.taps.noSelection" = "请选择一个软件源";
 "menu.packages.noSelection" = "请选择一个软件包";
+"menu.casks.noSelection" = "请选择一个应用";
 "menu.services.noSelection" = "请选择一个服务";
 "menu.settings.noSelection" = "请选择一个设置项";
 

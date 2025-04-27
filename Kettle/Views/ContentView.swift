@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .taps
     @State private var selectedTap: HomebrewTap? = nil
     @State private var selectedPackage: HomebrewPackage? = nil
+    @State private var selectedCask: HomebrewCask? = nil
     @State private var selectedSettingsSection: SettingsSection? = .status
     @State private var showAddTap = false
     @State private var isRefreshing = false
@@ -18,7 +19,7 @@ struct ContentView: View {
     @State private var viewID = UUID()
     
     enum Tab: Hashable {
-        case taps, packages, services, settings
+        case taps, packages, casks, services, settings
     }
     
     enum SettingsSection: String {
@@ -51,19 +52,23 @@ struct ContentView: View {
     
     private var sidebarContent: some View {
         List(selection: $selectedTab) {
-            Label(L10n.MainMenu.taps, systemImage: "archivebox")
+            Label(NSLocalizedString("menu.taps", comment: "Taps Menu"), systemImage: "archivebox")
                 .font(.title3)
                 .padding(.vertical, 6)
                 .tag(Tab.taps)
-            Label(L10n.MainMenu.packages, systemImage: "shippingbox")
+            Label(NSLocalizedString("menu.packages", comment: "Packages Menu"), systemImage: "shippingbox")
                 .font(.title3)
                 .padding(.vertical, 6)
                 .tag(Tab.packages)
-            Label(L10n.MainMenu.services, systemImage: "server.rack")
+            Label(NSLocalizedString("menu.casks", comment: "Casks Menu"), systemImage: "app.badge")
+                .font(.title3)
+                .padding(.vertical, 6)
+                .tag(Tab.casks)
+            Label(NSLocalizedString("menu.services", comment: "Services Menu"), systemImage: "server.rack")
                 .font(.title3)
                 .padding(.vertical, 6)
                 .tag(Tab.services)
-            Label(L10n.MainMenu.settings, systemImage: "gear")
+            Label(NSLocalizedString("menu.settings", comment: "Settings Menu"), systemImage: "gear")
                 .font(.title3)
                 .padding(.vertical, 6)
                 .tag(Tab.settings)
@@ -85,6 +90,9 @@ struct ContentView: View {
                     .background(Color(nsColor: .windowBackgroundColor))
             case .packages:
                 PackageListPanel(selectedPackage: $selectedPackage)
+                    .background(Color(nsColor: .windowBackgroundColor))
+            case .casks:
+                CaskListPanel(selectedCask: $selectedCask)
                     .background(Color(nsColor: .windowBackgroundColor))
             case .services:
                 ServiceListPanel(selectedService: $selectedService)
@@ -132,6 +140,14 @@ struct ContentView: View {
                         .background(Color(nsColor: .windowBackgroundColor))
                 } else {
                     Text(NSLocalizedString("menu.packages.noSelection", comment: "No package selected"))
+                        .foregroundColor(.secondary)
+                }
+            case .casks:
+                if let cask = selectedCask {
+                    CaskDetailPanel(cask: cask)
+                        .background(Color(nsColor: .windowBackgroundColor))
+                } else {
+                    Text(NSLocalizedString("menu.casks.noSelection", comment: "No cask selected"))
                         .foregroundColor(.secondary)
                 }
             case .services:
@@ -201,6 +217,11 @@ struct ContentView: View {
                     Label(L10n.Common.refresh, systemImage: "arrow.clockwise")
                 }
                 
+            case .casks:
+                Button(action: { NotificationCenter.default.post(name: .refreshCasks, object: nil) }) {
+                    Label(NSLocalizedString("Refresh", comment: "Refresh button"), systemImage: "arrow.clockwise")
+                }
+                
             case .services:
                 Button(action: { NotificationCenter.default.post(name: .refreshServices, object: nil) }) {
                     Label(L10n.Common.refresh, systemImage: "arrow.clockwise")
@@ -255,12 +276,16 @@ struct ContentView: View {
         .onChange(of: selectedTap) { newValue in
             print("selectedTap changed: \(String(describing: newValue))")
         }
+        .onChange(of: selectedCask) { newValue in
+            print("selectedCask changed: \(String(describing: newValue))")
+        }
     }
     
     // 通知名扩展
     enum NotificationName {
         static let refreshTaps = Notification.Name("refreshTaps")
         static let refreshPackages = Notification.Name("refreshPackages")
+        static let refreshCasks = Notification.Name("refreshCasks")
         static let refreshServices = Notification.Name("refreshServices")
         static let refreshStateChanged = Notification.Name("refreshStateChanged")
     }
@@ -1554,6 +1579,49 @@ struct DoctorView: View {
 extension Notification.Name {
     static let refreshTaps = Notification.Name("refreshTaps")
     static let refreshPackages = Notification.Name("refreshPackages")
+    static let refreshCasks = Notification.Name("refreshCasks")
     static let refreshServices = Notification.Name("refreshServices")
     static let refreshStateChanged = Notification.Name("refreshStateChanged")
 } 
+
+// --- Add Placeholder Cask Views --- 
+
+// Placeholder for Cask model (replace with actual model later)
+struct HomebrewCask: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    // Add other properties as needed (version, description, etc.)
+}
+
+struct CaskListPanel: View {
+    @EnvironmentObject var homebrewManager: HomebrewManager // Assuming manager will handle casks
+    @Binding var selectedCask: HomebrewCask?
+    // Add state for cask list, search, etc. later
+    
+    var body: some View {
+        // Replace with actual List later
+        List {
+             Text("Cask List Placeholder")
+        }
+        .listStyle(PlainListStyle())
+        .scrollContentBackground(.hidden)
+        .background(Color(nsColor: .windowBackgroundColor))
+         .onReceive(NotificationCenter.default.publisher(for: ContentView.NotificationName.refreshCasks)) { _ in
+             // Add refresh logic here later
+             print("Received refresh casks notification")
+         }
+    }
+}
+
+struct CaskDetailPanel: View {
+    let cask: HomebrewCask
+    // Add state as needed
+    
+    var body: some View {
+        // Replace with actual details later
+        Text("Details for Cask: \(cask.name)")
+            .navigationTitle(cask.name)
+    }
+}
+
+// --- End Placeholder Cask Views --- 

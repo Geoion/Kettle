@@ -10,10 +10,12 @@
 // Main Menu
 "menu.taps" = "Taps";
 "menu.packages" = "Packages";
+"menu.casks" = "Casks";
 "menu.services" = "Services";
 "menu.settings" = "Settings";
 "menu.taps.noSelection" = "Please select a tap";
 "menu.packages.noSelection" = "Please select a package";
+"menu.casks.noSelection" = "Please select a cask";
 "menu.services.noSelection" = "Please select a service";
 "menu.settings.noSelection" = "Please select a setting";
 
