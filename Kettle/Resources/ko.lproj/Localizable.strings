@@ -1,0 +1,102 @@
+// Common
+"OK" = "확인";
+"Cancel" = "취소";
+"Error" = "오류";
+"Confirm" = "확인";
+"Warning" = "경고";
+
+// Main Menu
+"menu.taps" = "탭";
+"menu.packages" = "패키지";
+"menu.services" = "서비스";
+"menu.settings" = "설정";
+"menu.taps.noSelection" = "탭을 선택하세요";
+"menu.packages.noSelection" = "패키지를 선택하세요";
+"menu.services.noSelection" = "서비스를 선택하세요";
+"menu.settings.noSelection" = "설정 항목을 선택하세요";
+
+// Settings Sections
+"settings.preferences" = "환경설정";
+"settings.about" = "정보";
+"settings.export" = "내보내기";
+"settings.status" = "상태";
+"settings.preferences.desc" = "애플리케이션 및 외관 설정";
+
+// System Info
+"settings.systemInfo" = "시스템 정보";
+"settings.systemInfoDesc" = "시스템 및 Homebrew 설치 세부정보 보기";
+"settings.cpuModel" = "CPU 모델";
+"settings.homebrewStatus" = "Homebrew 상태";
+"settings.installed" = "설치됨";
+"settings.notInstalled" = "설치되지 않음";
+"settings.installPath" = "설치 경로";
+
+// Export Settings
+"settings.tapList" = "탭 목록";
+"settings.exportDesc" = "탭 목록을 JSON 파일로 내보내기";
+"settings.exportTaps" = "탭 내보내기";
+"settings.exportNote" = "내보낸 파일에는 모든 탭과 해당 정보가 포함됩니다.";
+
+// Version Info
+"Version %@" = "버전 %@";
+"Developer" = "개발자";
+"Contact" = "연락처";
+"Repository" = "저장소";
+"This is an open source project." = "이것은 오픈 소스 프로젝트입니다.";
+"View Source Code" = "소스 코드 보기";
+"Check for Updates" = "업데이트 확인";
+"Made with ❤️ by Geoion" = "Geoion이 ❤️으로 만듦";
+
+// Settings
+"Settings" = "설정";
+"Preferences" = "환경설정";
+"About" = "정보";
+"Export" = "내보내기";
+"Status" = "상태";
+"Interface" = "인터페이스";
+"Applications" = "응용 프로그램";
+"Language" = "언어";
+"Appearance" = "모양";
+"Language changes will take effect after restarting the app." = "언어 변경은 앱을 다시 시작한 후에 적용됩니다.";
+"Default Finder" = "기본 Finder";
+"Default Editor" = "기본 편집기";
+"These settings will be used when opening files and folders." = "이 설정은 파일과 폴더를 열 때 사용됩니다.";
+"System Default" = "시스템 기본값";
+"Follow System" = "시스템 설정에 따름";
+"Light" = "라이트";
+"Dark" = "다크";
+
+// Services
+"Services" = "서비스";
+"Please select a service" = "서비스를 선택하세요";
+"Status" = "상태";
+"Name" = "이름";
+"User" = "사용자";
+"File Path" = "파일 경로";
+"Service Configuration" = "서비스 설정";
+"Start Service" = "서비스 시작";
+"Stop Service" = "서비스 중지";
+"Are you sure you want to start %@?" = "%@를 시작하시겠습니까?";
+"Are you sure you want to stop %@?" = "%@를 중지하시겠습니까?";
+
+// Taps
+"Taps" = "탭";
+"Please select a tap" = "탭을 선택하세요";
+"Search Tap" = "탭 검색";
+"No taps available" = "사용 가능한 탭이 없습니다";
+"No results found" = "결과를 찾을 수 없습니다";
+"Last updated: %@" = "마지막 업데이트: %@";
+"Unknown" = "알 수 없음";
+"Open in Finder" = "Finder에서 열기";
+"Visit Repository" = "저장소 방문";
+"Remove Tap" = "탭 제거";
+"Install Tap" = "탭 설치";
+"Are you sure you want to remove '%@'?" = "'%@'를 제거하시겠습니까?";
+
+// Packages
+"Packages" = "패키지";
+"Please select a package" = "패키지를 선택하세요";
+"Package Information" = "패키지 정보";
+"Name" = "이름";
+"Version" = "버전";
+"Description" = "설명"; 

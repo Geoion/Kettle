@@ -93,8 +93,11 @@ struct BackupView: View {
                 }
             }
         }
-        .alert("Error", isPresented: .constant(errorMessage != nil)) {
-            Button("OK") {
+        .alert("Error", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("common.ok") {
                 errorMessage = nil
             }
         } message: {

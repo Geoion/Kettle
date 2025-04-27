@@ -1,0 +1,102 @@
+// Common
+"OK" = "OK";
+"Cancel" = "キャンセル";
+"Error" = "エラー";
+"Confirm" = "確認";
+"Warning" = "警告";
+
+// Main Menu
+"menu.taps" = "タップ";
+"menu.packages" = "パッケージ";
+"menu.services" = "サービス";
+"menu.settings" = "設定";
+"menu.taps.noSelection" = "タップを選択してください";
+"menu.packages.noSelection" = "パッケージを選択してください";
+"menu.services.noSelection" = "サービスを選択してください";
+"menu.settings.noSelection" = "設定項目を選択してください";
+
+// Settings Sections
+"settings.preferences" = "環境設定";
+"settings.about" = "このアプリについて";
+"settings.export" = "エクスポート";
+"settings.status" = "状態";
+"settings.preferences.desc" = "アプリケーションと外観の設定";
+
+// System Info
+"settings.systemInfo" = "システム情報";
+"settings.systemInfoDesc" = "システムと Homebrew のインストール詳細を表示";
+"settings.cpuModel" = "CPU モデル";
+"settings.homebrewStatus" = "Homebrew の状態";
+"settings.installed" = "インストール済み";
+"settings.notInstalled" = "未インストール";
+"settings.installPath" = "インストールパス";
+
+// Export Settings
+"settings.tapList" = "タップリスト";
+"settings.exportDesc" = "タップリストを JSON ファイルにエクスポート";
+"settings.exportTaps" = "タップをエクスポート";
+"settings.exportNote" = "エクスポートされたファイルには、すべてのタップとその情報が含まれます。";
+
+// Version Info
+"Version %@" = "バージョン %@";
+"Developer" = "開発者";
+"Contact" = "連絡先";
+"Repository" = "リポジトリ";
+"This is an open source project." = "これはオープンソースプロジェクトです。";
+"View Source Code" = "ソースコードを表示";
+"Check for Updates" = "アップデートを確認";
+"Made with ❤️ by Geoion" = "Geoion が ❤️ を込めて作成";
+
+// Settings
+"Settings" = "設定";
+"Preferences" = "環境設定";
+"About" = "このアプリについて";
+"Export" = "エクスポート";
+"Status" = "状態";
+"Interface" = "インターフェース";
+"Applications" = "アプリケーション";
+"Language" = "言語";
+"Appearance" = "外観";
+"Language changes will take effect after restarting the app." = "言語の変更はアプリを再起動後に反映されます。";
+"Default Finder" = "デフォルトのFinder";
+"Default Editor" = "デフォルトのエディタ";
+"These settings will be used when opening files and folders." = "これらの設定はファイルやフォルダを開く際に使用されます。";
+"System Default" = "システム設定に従う";
+"Follow System" = "システム設定に従う";
+"Light" = "ライト";
+"Dark" = "ダーク";
+
+// Services
+"Services" = "サービス";
+"Please select a service" = "サービスを選択してください";
+"Status" = "状態";
+"Name" = "名前";
+"User" = "ユーザー";
+"File Path" = "ファイルパス";
+"Service Configuration" = "サービス設定";
+"Start Service" = "サービスを開始";
+"Stop Service" = "サービスを停止";
+"Are you sure you want to start %@?" = "%@ を開始してもよろしいですか？";
+"Are you sure you want to stop %@?" = "%@ を停止してもよろしいですか？";
+
+// Taps
+"Taps" = "タップ";
+"Please select a tap" = "タップを選択してください";
+"Search Tap" = "タップを検索";
+"No taps available" = "利用可能なタップがありません";
+"No results found" = "結果が見つかりません";
+"Last updated: %@" = "最終更新：%@";
+"Unknown" = "不明";
+"Open in Finder" = "Finderで開く";
+"Visit Repository" = "リポジトリを表示";
+"Remove Tap" = "タップを削除";
+"Install Tap" = "タップをインストール";
+"Are you sure you want to remove '%@'?" = "'%@' を削除してもよろしいですか？";
+
+// Packages
+"Packages" = "パッケージ";
+"Please select a package" = "パッケージを選択してください";
+"Package Information" = "パッケージ情報";
+"Name" = "名前";
+"Version" = "バージョン";
+"Description" = "説明"; 

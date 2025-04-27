@@ -1,6 +1,6 @@
 import Foundation
 
-struct HomebrewPackage: Identifiable, Codable {
+struct HomebrewPackage: Identifiable, Codable, Hashable {
     let id = UUID()
     let name: String
     let version: String

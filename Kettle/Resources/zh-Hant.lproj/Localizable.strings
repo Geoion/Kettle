@@ -1,0 +1,102 @@
+// Common
+"OK" = "確定";
+"Cancel" = "取消";
+"Error" = "錯誤";
+"Confirm" = "確認";
+"Warning" = "警告";
+
+// Main Menu
+"menu.taps" = "軟體來源";
+"menu.packages" = "軟體包";
+"menu.services" = "服務";
+"menu.settings" = "設定";
+"menu.taps.noSelection" = "請選擇一個軟體來源";
+"menu.packages.noSelection" = "請選擇一個軟體包";
+"menu.services.noSelection" = "請選擇一個服務";
+"menu.settings.noSelection" = "請選擇一個設定項";
+
+// Settings Sections
+"settings.preferences" = "偏好設定";
+"settings.about" = "關於";
+"settings.export" = "匯出";
+"settings.status" = "狀態";
+"settings.preferences.desc" = "配置您的首選應用程式和外觀";
+
+// System Info
+"settings.systemInfo" = "系統資訊";
+"settings.systemInfoDesc" = "查看系統和 Homebrew 安裝詳情";
+"settings.cpuModel" = "CPU 型號";
+"settings.homebrewStatus" = "Homebrew 狀態";
+"settings.installed" = "已安裝";
+"settings.notInstalled" = "未安裝";
+"settings.installPath" = "安裝路徑";
+
+// Export Settings
+"settings.tapList" = "軟體來源列表";
+"settings.exportDesc" = "將您的軟體來源列表匯出為 JSON 檔案";
+"settings.exportTaps" = "匯出軟體來源";
+"settings.exportNote" = "匯出的檔案將包含所有軟體來源及其資訊。";
+
+// Version Info
+"Version %@" = "版本 %@";
+"Developer" = "開發者";
+"Contact" = "聯絡方式";
+"Repository" = "程式碼倉庫";
+"This is an open source project." = "這是一個開源專案。";
+"View Source Code" = "查看原始碼";
+"Check for Updates" = "檢查更新";
+"Made with ❤️ by Geoion" = "由 Geoion 用 ❤️ 製作";
+
+// Settings
+"Settings" = "設定";
+"Preferences" = "偏好設定";
+"About" = "關於";
+"Export" = "匯出";
+"Status" = "狀態";
+"Interface" = "介面";
+"Applications" = "應用程式";
+"Language" = "語言";
+"Appearance" = "外觀";
+"Language changes will take effect after restarting the app." = "語言更改將在重新啟動應用程式後生效。";
+"Default Finder" = "預設訪達";
+"Default Editor" = "預設編輯器";
+"These settings will be used when opening files and folders." = "這些設定將用於開啟檔案和資料夾。";
+"System Default" = "跟隨系統";
+"Follow System" = "跟隨系統";
+"Light" = "淺色";
+"Dark" = "深色";
+
+// Services
+"Services" = "服務";
+"Please select a service" = "請選擇一個服務";
+"Status" = "狀態";
+"Name" = "名稱";
+"User" = "使用者";
+"File Path" = "檔案路徑";
+"Service Configuration" = "服務設定";
+"Start Service" = "啟動服務";
+"Stop Service" = "停止服務";
+"Are you sure you want to start %@?" = "確定要啟動 %@ 嗎？";
+"Are you sure you want to stop %@?" = "確定要停止 %@ 嗎？";
+
+// Taps
+"Taps" = "軟體來源";
+"Please select a tap" = "請選擇一個軟體來源";
+"Search Tap" = "搜尋軟體來源";
+"No taps available" = "沒有可用的軟體來源";
+"No results found" = "未找到結果";
+"Last updated: %@" = "最後更新：%@";
+"Unknown" = "未知";
+"Open in Finder" = "在訪達中開啟";
+"Visit Repository" = "訪問儲存庫";
+"Remove Tap" = "移除軟體來源";
+"Install Tap" = "安裝軟體來源";
+"Are you sure you want to remove '%@'?" = "確定要移除 '%@' 嗎？";
+
+// Packages
+"Packages" = "軟體包";
+"Please select a package" = "請選擇一個軟體包";
+"Package Information" = "軟體包資訊";
+"Name" = "名稱";
+"Version" = "版本";
+"Description" = "描述"; 

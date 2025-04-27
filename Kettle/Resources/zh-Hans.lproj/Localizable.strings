@@ -1,0 +1,108 @@
+// Common
+"OK" = "确定";
+"Cancel" = "取消";
+"Error" = "错误";
+"Confirm" = "确认";
+"Warning" = "警告";
+
+// Main Menu
+"menu.taps" = "软件源";
+"menu.packages" = "软件包";
+"menu.services" = "服务";
+"menu.settings" = "设置";
+"menu.taps.noSelection" = "请选择一个软件源";
+"menu.packages.noSelection" = "请选择一个软件包";
+"menu.services.noSelection" = "请选择一个服务";
+"menu.settings.noSelection" = "请选择一个设置项";
+
+// Settings Sections
+"settings.preferences" = "偏好设置";
+"settings.about" = "关于";
+"settings.export" = "导出";
+"settings.status" = "状态";
+"settings.preferences.desc" = "配置您的首选应用程序和外观";
+
+// System Info
+"settings.systemInfo" = "系统信息";
+"settings.systemInfoDesc" = "查看系统和 Homebrew 安装详情";
+"settings.cpuModel" = "CPU 型号";
+"settings.homebrewStatus" = "Homebrew 状态";
+"settings.homebrewVersion" = "Homebrew 版本";
+"settings.homebrewCore" = "Homebrew Core";
+"settings.homebrewCask" = "Homebrew Cask";
+"settings.installed" = "已安装";
+"settings.notInstalled" = "未安装";
+"settings.installPath" = "安装路径";
+"settings.status" = "状态";
+"status.notApplicable" = "-";
+
+// Export Settings
+"settings.tapList" = "软件源列表";
+"settings.exportDesc" = "将您的软件源列表导出为 JSON 文件";
+"settings.exportTaps" = "导出软件源";
+"settings.exportNote" = "导出的文件将包含所有软件源及其信息。";
+
+// Doctor Settings (New Section)
+"settings.doctor" = "诊断";
+"doctor.prompt" = "点击上方按钮运行 brew doctor。";
+"doctor.running" = "正在运行 brew doctor...";
+"doctor.success" = "您的系统已准备就绪。";
+"doctor.errorPrefix" = "运行 brew doctor 失败：";
+"doctor.runButton" = "运行诊断";
+
+// Services
+"Services" = "服务";
+"Please select a service" = "请选择一个服务";
+"Status" = "状态";
+"Name" = "名称";
+"User" = "用户";
+"File Path" = "文件路径";
+"Service Configuration" = "服务配置";
+"Start Service" = "启动服务";
+"Stop Service" = "停止服务";
+"Are you sure you want to start %@?" = "确定要启动 %@ 吗？";
+"Are you sure you want to stop %@?" = "确定要停止 %@ 吗？";
+
+// Taps
+"Taps" = "软件源";
+"Please select a tap" = "请选择一个软件源";
+"Search Tap" = "搜索软件源";
+"No taps available" = "没有可用的软件源";
+"No results found" = "未找到结果";
+"Last updated: %@" = "最后更新：%@";
+"Unknown" = "未知";
+"Open in Finder" = "在访达中打开";
+"Visit Repository" = "访问仓库";
+"Remove Tap" = "移除软件源";
+"Install Tap" = "安装软件源";
+"Are you sure you want to remove '%@'?" = "确定要移除 '%@' 吗？";
+
+// Packages
+"Packages" = "软件包";
+"Please select a package" = "请选择一个软件包";
+"Package Information" = "软件包信息";
+"Version" = "版本";
+"Description" = "描述";
+
+/* Services */
+"services.name" = "名称";
+"services.status" = "状态";
+"services.user" = "用户";
+"services.filePath" = "文件路径";
+"services.configuration" = "服务配置";
+"services.startService" = "启动服务";
+"services.stopService" = "停止服务";
+"services.confirmStart" = "确定要启动 %@ 吗？";
+"services.confirmStop" = "确定要停止 %@ 吗？";
+
+/* Backup View */
+"backup.title" = "备份";
+"backup.backup" = "备份配置";
+"backup.restore" = "恢复配置";
+"backup.error" = "错误";
+"backup.backupInProgress" = "正在备份...";
+"backup.restoreInProgress" = "正在恢复...";
+"backup.backupSuccess" = "备份成功完成";
+"backup.restoreSuccess" = "恢复成功完成";
+"backup.backupFailed" = "备份配置失败：%@";
+"backup.restoreFailed" = "恢复配置失败：%@"; 

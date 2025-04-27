@@ -1,0 +1,151 @@
+// Common
+"OK" = "OK";
+"Cancel" = "Cancel";
+"Error" = "Error";
+"Confirm" = "Confirm";
+"Warning" = "Warning";
+"Refresh" = "Refresh";
+"Add" = "Add";
+
+// Main Menu
+"menu.taps" = "Taps";
+"menu.packages" = "Packages";
+"menu.services" = "Services";
+"menu.settings" = "Settings";
+"menu.taps.noSelection" = "Please select a tap";
+"menu.packages.noSelection" = "Please select a package";
+"menu.services.noSelection" = "Please select a service";
+"menu.settings.noSelection" = "Please select a setting";
+
+// Settings Sections
+"settings.preferences" = "Preferences";
+"settings.about" = "About";
+"settings.export" = "Export";
+"settings.status" = "Status";
+"settings.preferences.desc" = "Configure your preferred applications and appearance";
+
+// System Info
+"settings.systemInfo" = "System Information";
+"settings.systemInfoDesc" = "View system and Homebrew installation details";
+"settings.cpuModel" = "CPU Model";
+"settings.homebrewStatus" = "Homebrew Status";
+"settings.homebrewVersion" = "Homebrew Version";
+"settings.homebrewCore" = "Homebrew Core";
+"settings.homebrewCask" = "Homebrew Cask";
+"settings.installed" = "Installed";
+"settings.notInstalled" = "Not Installed";
+"settings.installPath" = "Installation Path";
+"settings.status" = "Status";
+"status.notApplicable" = "N/A";
+
+// Export Settings
+"settings.tapList" = "Tap List";
+"settings.exportDesc" = "Export your tap list to a JSON file";
+"settings.exportTaps" = "Export Taps";
+"settings.exportNote" = "The exported file will include all taps and their information.";
+
+// Doctor Settings (New Section)
+"settings.doctor" = "Doctor";
+"doctor.prompt" = "Click the button above to run brew doctor.";
+"doctor.running" = "Running brew doctor...";
+"doctor.success" = "Your system is ready to brew.";
+"doctor.errorPrefix" = "Failed to run brew doctor:";
+"doctor.runButton" = "Run Doctor";
+
+// Settings
+"Settings" = "Settings";
+"Preferences" = "Preferences";
+"About" = "About";
+"Export" = "Export";
+"Status" = "Status";
+"Interface" = "Interface";
+"Applications" = "Applications";
+"Language" = "Language";
+"Appearance" = "Appearance";
+"Language changes will take effect after restarting the app." = "Language changes will take effect after restarting the app.";
+"Default Finder" = "Default Finder";
+"Default Editor" = "Default Editor";
+"These settings will be used when opening files and folders." = "These settings will be used when opening files and folders.";
+"System Default" = "System Default";
+"Follow System" = "Follow System";
+"Light" = "Light";
+"Dark" = "Dark";
+
+// Services
+"Services" = "Services";
+"Please select a service" = "Please select a service";
+"Status" = "Status";
+"Name" = "Name";
+"User" = "User";
+"File Path" = "File Path";
+"Service Configuration" = "Service Configuration";
+"Start Service" = "Start Service";
+"Stop Service" = "Stop Service";
+"Are you sure you want to start %@?" = "Are you sure you want to start %@?";
+"Are you sure you want to stop %@?" = "Are you sure you want to stop %@?";
+
+// Taps
+"Taps" = "Taps";
+"Please select a tap" = "Please select a tap";
+"Search Tap" = "Search Tap";
+"No taps available" = "No taps available";
+"No results found" = "No results found";
+"Last updated: %@" = "Last updated: %@";
+"Unknown" = "Unknown";
+"Open in Finder" = "Open in Finder";
+"Visit Repository" = "Visit Repository";
+"Remove Tap" = "Remove Tap";
+"Install Tap" = "Install Tap";
+"Are you sure you want to remove '%@'?" = "Are you sure you want to remove '%@'?";
+
+// Packages
+"Packages" = "Packages";
+"Please select a package" = "Please select a package";
+"Package Information" = "Package Information";
+"Name" = "Name";
+"Version" = "Version";
+"Description" = "Description";
+"settings.preferences" = "Preferences";
+"settings.preferences.desc" = "Configure your preferred applications and appearance";
+
+// System Info
+"settings.systemInfo" = "System Information";
+"settings.systemInfoDesc" = "View system and Homebrew installation details";
+"settings.cpuModel" = "CPU Model";
+"settings.homebrewStatus" = "Homebrew Status";
+"settings.homebrewVersion" = "Homebrew Version";
+"settings.homebrewCore" = "Homebrew Core";
+"settings.homebrewCask" = "Homebrew Cask";
+"settings.installed" = "Installed";
+"settings.notInstalled" = "Not Installed";
+"settings.installPath" = "Installation Path";
+"settings.status" = "Status";
+
+// Export Settings
+"settings.tapList" = "Tap List";
+"settings.exportDesc" = "Export your tap list to a JSON file";
+"settings.exportTaps" = "Export Taps";
+"settings.exportNote" = "The exported file will include all taps and their information.";
+
+/* Services */
+"services.name" = "Name";
+"services.status" = "Status";
+"services.user" = "User";
+"services.filePath" = "File Path";
+"services.configuration" = "Service Configuration";
+"services.startService" = "Start Service";
+"services.stopService" = "Stop Service";
+"services.confirmStart" = "Are you sure you want to start %@?";
+"services.confirmStop" = "Are you sure you want to stop %@?";
+
+/* Backup View */
+"backup.title" = "Backup";
+"backup.backup" = "Backup Configuration";
+"backup.restore" = "Restore Configuration";
+"backup.error" = "Error";
+"backup.backupInProgress" = "Backing up...";
+"backup.restoreInProgress" = "Restoring...";
+"backup.backupSuccess" = "Backup completed successfully";
+"backup.restoreSuccess" = "Restore completed successfully";
+"backup.backupFailed" = "Failed to backup configuration: %@";
+"backup.restoreFailed" = "Failed to restore configuration: %@"; 

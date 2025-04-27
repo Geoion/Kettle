@@ -8,12 +8,13 @@ struct TapView: View {
     @State private var showTapDetail = false
     @State private var showingAddTap = false
     @State private var lastUpdate: Date? = nil
+    @State private var cachedTaps: [HomebrewTap] = []
     
     var filteredTaps: [HomebrewTap] {
         if searchText.isEmpty {
-            return homebrewManager.taps
+            return cachedTaps
         } else {
-            return homebrewManager.taps.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+            return cachedTaps.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
         }
     }
     
@@ -22,23 +23,17 @@ struct TapView: View {
             HStack(spacing: 0) {
                 // 左侧列表
                 VStack(spacing: 0) {
-                    List(selection: $selectedTap) {
+                    List {
                         ForEach(filteredTaps) { tap in
                             HStack {
                                 Text(tap.name)
                                     .font(.body)
-                                Spacer()
-                                if tap.installed {
-                                    Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-                                } else {
-                                    Image(systemName: "circle").foregroundColor(.gray)
-                                }
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 selectedTap = tap
-                                showTapDetail = true
                             }
+                            .background(selectedTap == tap ? Color.accentColor.opacity(0.15) : Color.clear)
                         }
                     }
                     .listStyle(PlainListStyle())
@@ -59,15 +54,17 @@ struct TapView: View {
                     )
                     .frame(minWidth: 260, idealWidth: 300, maxWidth: 350)
                 }
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
+                .toolbar(id: "TapViewToolbar") {
+                    ToolbarItem(id: "refresh", placement: .primaryAction) {
                         Button(action: {
                             Task {
                                 isRefreshing = true
                                 try? await homebrewManager.refreshTaps()
                                 lastUpdate = Date()
                                 isRefreshing = false
-                                // TODO: 缓存 taps 到本地
+                                // 刷新后覆盖本地缓存
+                                saveTapsToCache(homebrewManager.taps, lastUpdate: lastUpdate)
+                                cachedTaps = homebrewManager.taps
                             }
                         }) {
                             if isRefreshing {
@@ -77,73 +74,61 @@ struct TapView: View {
                             }
                         }
                         .disabled(isRefreshing)
+                        .help("Refresh Taps")
                     }
-                    ToolbarItem(placement: .automatic) {
+                    
+                    ToolbarItem(id: "add", placement: .primaryAction) {
                         Button(action: {
                             showingAddTap = true
                         }) {
                             Image(systemName: "plus")
                         }
+                        .help("Add New Tap")
                     }
                 }
+                
                 // 右侧详情
-                VStack {
+                ZStack {
                     if let tap = selectedTap {
-                        TapDetailPanel(tap: tap)
+                        TapDetailPanel(tap: tap, selectedTap: $selectedTap)
                     } else {
                         Text("请选择一个 Tap 查看详情")
                             .foregroundColor(.secondary)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(Color(.windowBackgroundColor))
             }
             .navigationTitle("Taps")
         }
         .onAppear {
-            // TODO: 加载本地缓存的 taps 和 lastUpdate
+            // 优先加载本地缓存
+            if let (taps, update) = loadTapsFromCache() {
+                cachedTaps = taps
+                lastUpdate = update
+            } else {
+                cachedTaps = homebrewManager.taps
+            }
         }
         .sheet(isPresented: $showingAddTap) {
             AddTapView(homebrewManager: homebrewManager)
         }
     }
-}
-
-struct TapDetailPanel: View {
-    let tap: HomebrewTap
-    var body: some View {
-        Form {
-            Section(header: Text("Tap 信息")) {
-                LabeledContent("名称", value: tap.name)
-                LabeledContent("URL", value: tap.url)
-                LabeledContent("状态", value: tap.installed ? "已安装" : "未安装")
-            }
-            // 可扩展更多信息
-        }
-        .navigationTitle("Tap 详情")
-    }
-}
-
-struct TapRow: View {
-    let tap: HomebrewTap
     
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(tap.name)
-                    .font(.headline)
-                Text(tap.url)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            if tap.installed {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            }
+    // 本地缓存逻辑
+    func saveTapsToCache(_ taps: [HomebrewTap], lastUpdate: Date?) {
+        if let data = try? JSONEncoder().encode(taps) {
+            UserDefaults.standard.set(data, forKey: "cachedTaps")
         }
-        .padding(.vertical, 4)
+        if let date = lastUpdate {
+            UserDefaults.standard.set(date, forKey: "cachedTapsUpdate")
+        }
+    }
+    func loadTapsFromCache() -> ([HomebrewTap], Date?)? {
+        guard let data = UserDefaults.standard.data(forKey: "cachedTaps"),
+              let taps = try? JSONDecoder().decode([HomebrewTap].self, from: data) else { return nil }
+        let update = UserDefaults.standard.object(forKey: "cachedTapsUpdate") as? Date
+        return (taps, update)
     }
 }
 
@@ -200,11 +185,12 @@ struct TapDetailView: View {
                 }
             }
             .navigationTitle("Tap Details")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+            .toolbar(id: "TapDetailToolbar") {
+                ToolbarItem(id: "close", placement: .cancellationAction) {
                     Button("Close") {
                         dismiss()
                     }
+                    .help("Close Details")
                 }
             }
         }
