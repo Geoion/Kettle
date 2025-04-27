@@ -1,0 +1,72 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type (major/minor/patch)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get current version
+        id: get_current_version
+        run: |
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Current version: $CURRENT_VERSION"
+          echo "CURRENT_VERSION=${CURRENT_VERSION#v}" >> $GITHUB_ENV
+
+      - name: Calculate new version
+        id: calc_version
+        run: |
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+          case "${{ github.event.inputs.version_type }}" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+          NEW_VERSION="v$major.$minor.$patch"
+          echo "New version: $NEW_VERSION"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Update version in project
+        run: |
+          # 更新 Info.plist 中的版本号
+          if [ -f "Kettle/Info.plist" ]; then
+            sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = ${NEW_VERSION#v};/" Kettle.xcodeproj/project.pbxproj
+          fi
+          
+          # 提交更改
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "chore: bump version to ${NEW_VERSION}"
+          git tag -a "${NEW_VERSION}" -m "Release ${NEW_VERSION}"
+          git push
+          git push --tags 

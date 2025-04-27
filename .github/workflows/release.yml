@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # 当推送版本标签时触发，例如 v1.0.0
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install dependencies
+        run: |
+          brew install create-dmg
+          
+      - name: Build app
+        run: |
+          xcodebuild -scheme Kettle -configuration Release -derivedDataPath build
+
+      - name: Create DMG
+        run: |
+          mkdir -p dist
+          create-dmg \
+            --volname "Kettle" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "Kettle.app" 200 190 \
+            --hide-extension "Kettle.app" \
+            --app-drop-link 600 185 \
+            "dist/Kettle.dmg" \
+            "build/Build/Products/Release/Kettle.app"
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/Kettle.dmg
+          name: Release ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: Upload to GitHub Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kettle-${{ env.VERSION }}
+          path: dist/Kettle.dmg
+          if-no-files-found: error 
