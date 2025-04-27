@@ -1,7 +1,7 @@
 # Kettle
 
 <div align="center">
-  <img src="Kettle/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" height="128" alt="Kettle Logo">
+  <!-- <img src="Kettle/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" height="128" alt="Kettle Logo"> -->
   <h3>A Modern Homebrew GUI Manager for macOS</h3>
   <p>
     <a href="https://github.com/eskiyin/Kettle/releases/latest">
@@ -128,8 +128,3 @@ If you encounter any issues or have questions:
 - Check our [Discussions](https://github.com/eskiyin/Kettle/discussions) page
 - Read the [Wiki](https://github.com/eskiyin/Kettle/wiki)
 
----
-
-<div align="center">
-  Made with ❤️ by <a href="https://github.com/eskiyin">eskiyin</a>
-</div>
