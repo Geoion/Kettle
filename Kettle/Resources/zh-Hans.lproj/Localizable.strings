@@ -4,6 +4,9 @@
 "Error" = "错误";
 "Confirm" = "确认";
 "Warning" = "警告";
+"common.lastUpdated" = "最后更新";
+"common.unknown" = "未知";
+"common.items" = "项";
 
 // Main Menu
 "menu.taps" = "软件源";
@@ -107,4 +110,30 @@
 "backup.backupSuccess" = "备份成功完成";
 "backup.restoreSuccess" = "恢复成功完成";
 "backup.backupFailed" = "备份配置失败：%@";
-"backup.restoreFailed" = "恢复配置失败：%@"; 
+"backup.restoreFailed" = "恢复配置失败：%@";
+
+// About View Specific
+"settings.about.informationHeader" = "信息";
+"settings.about.developer" = "开发者";
+"settings.about.contact" = "联系方式";
+"settings.about.repository" = "代码仓库";
+"settings.about.openSource" = "Kettle 是一个开源项目。";
+"settings.about.actionsHeader" = "操作";
+"settings.about.viewSourceCode" = "在 GitHub 上查看源代码";
+"settings.about.checkUpdates" = "检查更新";
+"settings.about.viewChangelog" = "查看更新日志";
+"settings.about.madeBy" = "由 Geoion ❤️ 制作";
+
+// Changelog View
+"changelog.title" = "更新日志";
+"common.close" = "关闭";
+
+// Packages List
+"packages.searchPlaceholder" = "搜索软件包";
+"packages.noneAvailable" = "未安装软件包或缓存为空。";
+"packages.noResults" = "未找到匹配的软件包。";
+
+// Casks List
+"casks.searchPlaceholder" = "搜索应用";
+"casks.noneAvailable" = "未安装应用或缓存为空。";
+"casks.noResults" = "未找到匹配的应用。"; 

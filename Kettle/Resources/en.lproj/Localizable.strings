@@ -6,6 +6,9 @@
 "Warning" = "Warning";
 "Refresh" = "Refresh";
 "Add" = "Add";
+"common.lastUpdated" = "Last updated";
+"common.unknown" = "Unknown";
+"common.items" = "items";
 
 // Main Menu
 "menu.taps" = "Taps";
@@ -150,4 +153,31 @@
 "backup.backupSuccess" = "Backup completed successfully";
 "backup.restoreSuccess" = "Restore completed successfully";
 "backup.backupFailed" = "Failed to backup configuration: %@";
-"backup.restoreFailed" = "Failed to restore configuration: %@"; 
+"backup.restoreFailed" = "Failed to restore configuration: %@";
+
+// About View Specific
+"Version" = "Version";
+"settings.about.informationHeader" = "Information";
+"settings.about.developer" = "Developer";
+"settings.about.contact" = "Contact";
+"settings.about.repository" = "Repository";
+"settings.about.openSource" = "Kettle is an open-source project.";
+"settings.about.actionsHeader" = "Actions";
+"settings.about.viewSourceCode" = "View Source Code on GitHub";
+"settings.about.checkUpdates" = "Check for Updates";
+"settings.about.viewChangelog" = "View Changelog";
+"settings.about.madeBy" = "Made with ❤️ by Geoion";
+
+// Changelog View
+"changelog.title" = "Changelog";
+"common.close" = "Close";
+
+// Packages List
+"packages.searchPlaceholder" = "Search Packages";
+"packages.noneAvailable" = "No packages installed or cache empty.";
+"packages.noResults" = "No packages found matching search.";
+
+// Casks List
+"casks.searchPlaceholder" = "Search Casks";
+"casks.noneAvailable" = "No casks installed or cache empty.";
+"casks.noResults" = "No casks found matching search."; 

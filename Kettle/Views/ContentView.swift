@@ -1251,113 +1251,132 @@ struct PreferencesView: View {
 
 struct AboutView: View {
     @Environment(\.openURL) private var openURL
-    let version = "1.0.0"
+    // Assuming version comes from bundle or is defined elsewhere
+    let versionString = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "N/A"
+    let buildString = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "N/A"
     let websiteURL = URL(string: "https://github.com/Geoion/kettle")!
     let emailURL = URL(string: "mailto:eski.yin@gmail.com")!
+    @State private var showingChangelog = false
     
     var body: some View {
-        ZStack {
+        ZStack { // Keep ZStack for background color
             Color(nsColor: .windowBackgroundColor)
                 .ignoresSafeArea()
             
-            Form {
-                // App Logo and Version
+            Form { // Use Form as the main container
+                // Section 1: App Logo and Version
                 Section {
-                    VStack(spacing: 20) {
-                        Image(systemName: "mug.fill")
-                            .font(.system(size: 64))
+                    VStack(spacing: 16) { // Reduced spacing a bit
+                        Image(systemName: "mug.fill") // Or use your actual AppIcon: Image(nsImage: NSApp.applicationIconImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 64, height: 64)
                             .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(.blue)
                         
                         VStack(spacing: 4) {
-                            Text("Kettle")
-                                .font(.system(size: 28, weight: .medium))
-                            Text(String(format: L10n.Settings.version, version))
+                            Text("Kettle") // App Name
+                                .font(.system(size: 24, weight: .medium))
+                            // Combine Version and Build
+                            Text("\(NSLocalizedString("Version", comment: "Version label")) \(versionString) (\(buildString))") 
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
+                } header: { 
+                     EmptyView() 
+                } footer: { 
+                     EmptyView()
                 }
                 
-                // Information
+                // Section 2: Information (Developer, Contact, Repo)
                 Section {
-                    VStack(alignment: .leading, spacing: 16) {
-                        // Developer
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "person.circle.fill")
-                                Text(L10n.Settings.developer)
-                            }
-                            .font(.headline)
-                            Text("Geoion")
-                                .padding(.leading, 24)
-                        }
-                        
-                        // Contact
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "envelope.fill")
-                                Text(L10n.Settings.contact)
-                            }
-                            .font(.headline)
-                            Button(action: { openURL(emailURL) }) {
-                                Text(emailURL.absoluteString.replacingOccurrences(of: "mailto:", with: ""))
-                                    .foregroundStyle(.blue)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.leading, 24)
-                        }
-                        
-                        // Repository
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: "chevron.left.forwardslash.chevron.right")
-                                Text(L10n.Settings.repository)
-                            }
-                            .font(.headline)
-                            Button(action: { openURL(websiteURL) }) {
-                                Text("github.com/Geoion/kettle")
-                                    .foregroundStyle(.blue)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.leading, 24)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                } footer: {
-                    Text(L10n.Settings.openSource)
-                        .foregroundStyle(.secondary)
-                }
-                
-                // Actions
-                Section {
-                    Button(action: { openURL(websiteURL) }) {
-                        HStack {
-                            Image(systemName: "arrow.up.forward.app.fill")
-                            Text(L10n.Settings.viewSourceCode)
-                        }
+                    HStack { // Developer Row
+                        Label(NSLocalizedString("settings.about.developer", comment: "Developer label"), systemImage: "person.circle.fill")
+                        Spacer()
+                        Text("Geoion")
+                             .foregroundStyle(.secondary)
+                             .textSelection(.enabled)
                     }
                     
-                    Button(L10n.Settings.checkUpdates) {
-                        // TODO: Implement update check
+                    HStack { // Contact Row
+                        Label(NSLocalizedString("settings.about.contact", comment: "Contact label"), systemImage: "envelope.fill")
+                        Spacer()
+                        Button(action: { openURL(emailURL) }) {
+                            Text(emailURL.absoluteString.replacingOccurrences(of: "mailto:", with: ""))
+                        }
+                        .buttonStyle(.link) // Use link style for better appearance
+                        .foregroundStyle(.blue)
+                        .textSelection(.enabled)
                     }
-                }
-                
-                // Footer
-                Section {
-                    Text(L10n.Settings.madeBy)
-                        .frame(maxWidth: .infinity, alignment: .center)
+
+                    HStack { // Repository Row
+                         Label(NSLocalizedString("settings.about.repository", comment: "Repository label"), systemImage: "chevron.left.forwardslash.chevron.right")
+                         Spacer()
+                         Button(action: { openURL(websiteURL) }) {
+                            // Show only relevant part of URL
+                            Text(websiteURL.host ?? websiteURL.absoluteString)
+                         }
+                         .buttonStyle(.link)
+                         .foregroundStyle(.blue)
+                         .textSelection(.enabled)
+                    }
+                } header: {
+                    Text(NSLocalizedString("settings.about.informationHeader", comment: "Information header in About view"))
+                } footer: {
+                    Text(NSLocalizedString("settings.about.openSource", comment: "Open source notice"))
                         .foregroundStyle(.secondary)
                 }
+                
+                // Section 3: Actions
+                Section {
+                    Button(action: { openURL(websiteURL) }) {
+                         // Use Label for consistency
+                        Label(NSLocalizedString("settings.about.viewSourceCode", comment: "View Source Code button"), systemImage: "arrow.up.forward.app.fill")
+                    }
+                    .buttonStyle(.plain) // Make button act like a list item
+                    
+                    Button(action: { showingChangelog = true }) {
+                        Label(NSLocalizedString("settings.about.viewChangelog", comment: "View Changelog button"), systemImage: "list.bullet.rectangle.portrait")
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Button(action: { /* TODO: Implement update check */ }) {
+                        Label(NSLocalizedString("settings.about.checkUpdates", comment: "Check Updates button"), systemImage: "arrow.down.circle")
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(true) // Disable until implemented
+                } header: {
+                    Text(NSLocalizedString("settings.about.actionsHeader", comment: "Actions header in About view"))
+                } footer: {
+                    EmptyView()
+                }
+                
+                // Section 4: Footer
+                Section {
+                    Text(NSLocalizedString("settings.about.madeBy", comment: "Made by attribution"))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .foregroundStyle(.secondary)
+                        .font(.footnote)
+                } header: { 
+                    EmptyView() 
+                } footer: {
+                    EmptyView()
+                }
+
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(Color.clear)
         }
-        .navigationTitle(L10n.Settings.about)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .navigationTitle(NSLocalizedString("settings.about", comment: "About Navigation Title"))
+        .background(Color(nsColor: .windowBackgroundColor)) // Ensure overall background
+        .sheet(isPresented: $showingChangelog) {
+            ChangelogView()
+        }
     }
 }
 
