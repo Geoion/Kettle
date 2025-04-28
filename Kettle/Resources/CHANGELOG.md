@@ -1,5 +1,23 @@
 # Kettle Changelog
 
+## Version 1.0.1 (2024-04-27)
+
+### 🔧 Improvements
+
+#### Tap Management
+- Enhanced tap addition dialog with improved UI
+- Added real-time command preview for tap operations
+- Added log display for tap operations
+- Added ability to cancel ongoing tap operations
+- Improved input validation for tap names (user/repo format)
+- Added optional URL support for custom tap repositories
+
+### 🐛 Bug Fixes
+- Fixed layout issues in tap management dialogs
+- Improved error handling for tap operations
+- Added proper process termination for brew commands
+
+
 ## Version 1.0.0 (2024-04-27)
 
 ### 🎉 Major Features
