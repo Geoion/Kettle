@@ -46,6 +46,7 @@ class HomebrewManager: ObservableObject {
     private let packagesUpdateKey = "cachedPackagesUpdate"
     private let casksCacheKey = "cachedCasks"
     private let casksUpdateKey = "cachedCasksUpdate"
+    private var currentProcess: Process?
     
     init() {
         // Cache setup
@@ -151,6 +152,7 @@ class HomebrewManager: ObservableObject {
         }
         logger.debug("执行命令: brew \(command)")
         let process = Process()
+        currentProcess = process
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: currentBrewPath) // Use found path
         process.arguments = command.components(separatedBy: " ")
@@ -176,6 +178,7 @@ class HomebrewManager: ObservableObject {
         do {
             try process.run()
             process.waitUntilExit()
+            currentProcess = nil
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8) ?? ""
             if process.terminationStatus != 0 {
@@ -186,8 +189,31 @@ class HomebrewManager: ObservableObject {
             logger.debug("命令输出: \(output)")
             return output
         } catch {
+            currentProcess = nil
             logger.error("命令执行失败: \(error.localizedDescription)")
             throw error
+        }
+    }
+    
+    func terminateBrewProcess() async throws {
+        if let process = currentProcess {
+            logger.info("正在终止 brew 进程")
+            process.terminate()
+            currentProcess = nil
+            
+            // 使用 pkill 确保所有相关进程都被终止
+            let killProcess = Process()
+            killProcess.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+            killProcess.arguments = ["-f", "brew"]
+            
+            do {
+                try killProcess.run()
+                killProcess.waitUntilExit()
+                logger.info("成功终止 brew 进程")
+            } catch {
+                logger.error("终止 brew 进程时出错: \(error.localizedDescription)")
+                throw error
+            }
         }
     }
     

@@ -213,48 +213,132 @@ struct AddTapView: View {
     @State private var url = ""
     @State private var isAdding = false
     @State private var errorMessage: String?
+    @State private var logMessages: [String] = []
+    @State private var task: Task<Void, Never>?
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Tap Information")) {
-                    TextField("Name", text: $name)
-                    TextField("URL", text: $url)
+        VStack(spacing: 0) {
+            // Content
+            VStack(spacing: 20) {
+                // Title
+                Text("Add a tap")
+                    .font(.headline)
+                    .padding(.top)
+                
+                // Input fields
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Name (user/repo)")
+                            .foregroundColor(.secondary)
+                        TextField("e.g. homebrew/core", text: $name)
+                            .textFieldStyle(.roundedBorder)
+                            .help("Required. Format: user/repo")
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("URL (Optional)")
+                            .foregroundColor(.secondary)
+                        TextField("e.g. https://github.com/user/repo.git", text: $url)
+                            .textFieldStyle(.roundedBorder)
+                            .help("Optional. The git repository URL")
+                    }
+                }
+                .padding(.horizontal)
+                
+                // Command preview
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Command")
+                        .foregroundColor(.secondary)
+                    Text(commandPreview)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.textBackgroundColor))
+                        .cornerRadius(6)
+                }
+                .padding(.horizontal)
+                
+                // Log area
+                if !logMessages.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Log")
+                            .foregroundColor(.secondary)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(logMessages, id: \.self) { message in
+                                    Text(message)
+                                        .font(.system(.body, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .frame(height: 80)
+                        .padding(8)
+                        .background(Color(.textBackgroundColor))
+                        .cornerRadius(6)
+                    }
+                    .padding(.horizontal)
                 }
                 
-                Section {
-                    Button(action: {
+                Spacer()
+            }
+            
+            // Buttons
+            HStack {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.escape, modifiers: [])
+                
+                Spacer()
+                
+                if isAdding {
+                    Button("Close") {
+                        task?.cancel()
+                        // 终止 brew 进程
                         Task {
-                            isAdding = true
-                            do {
-                                let newTap = HomebrewTap(name: name, url: url, installed: false)
-                                try await homebrewManager.addTap(newTap)
-                                dismiss()
-                            } catch {
-                                errorMessage = error.localizedDescription
-                            }
-                            isAdding = false
-                        }
-                    }) {
-                        if isAdding {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                        } else {
-                            Text("Add Tap")
+                            try? await homebrewManager.terminateBrewProcess()
+                            dismiss()
                         }
                     }
-                    .disabled(isAdding || name.isEmpty || url.isEmpty)
+                    .buttonStyle(.bordered)
+                    .foregroundColor(.red)
                 }
-            }
-            .navigationTitle("Add New Tap")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                
+                Button(action: {
+                    task = Task {
+                        isAdding = true
+                        logMessages = []
+                        do {
+                            let newTap = HomebrewTap(name: name, url: url, installed: false)
+                            logMessages.append("Running: \(commandPreview)")
+                            try await homebrewManager.addTap(newTap)
+                            logMessages.append("Successfully added tap: \(name)")
+                            dismiss()
+                        } catch {
+                            errorMessage = error.localizedDescription
+                            logMessages.append("Error: \(error.localizedDescription)")
+                        }
+                        isAdding = false
+                    }
+                }) {
+                    if isAdding {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("Add")
                     }
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(isAdding || !isValidName(name))
             }
+            .padding()
+            .background(Color(.windowBackgroundColor))
         }
+        .frame(width: 400, height: 350)
+        .background(Color(.windowBackgroundColor))
         .alert("Error", isPresented: .constant(errorMessage != nil)) {
             Button("OK") {
                 errorMessage = nil
@@ -264,5 +348,19 @@ struct AddTapView: View {
                 Text(error)
             }
         }
+    }
+    
+    private var commandPreview: String {
+        if url.isEmpty {
+            return "brew tap \(name)"
+        } else {
+            return "brew tap \(name) \(url)"
+        }
+    }
+    
+    private func isValidName(_ name: String) -> Bool {
+        // Check if name follows user/repo format
+        let components = name.split(separator: "/")
+        return components.count == 2 && !components[0].isEmpty && !components[1].isEmpty
     }
 } 
