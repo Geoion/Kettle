@@ -832,111 +832,286 @@ struct ServiceDetailPanel: View {
     @Binding var selectedService: HomebrewService?
     @State private var plistContent: PlistParser.PlistValue?
     @State private var plistError: String?
+    @State private var rawXMLContent: String?
     @EnvironmentObject private var homebrewManager: HomebrewManager
     @State private var isLoading = false
     @State private var showConfirmation = false
-    @State private var errorMessage: String? = nil
+    @State private var errorMessage: String?
+    @State private var viewMode: PlistViewMode = .form
     
-    var body: some View {
-        ZStack {
-            Color(nsColor: .windowBackgroundColor)
-                .ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 16) {
-                    Form {
-                        Section {
-                            HStack {
-                                Text(L10n.Services.name)
-                                Spacer()
-                                Text(service.name)
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            HStack {
-                                Text(L10n.Services.status)
-                                Spacer()
-                                Label(service.status.rawValue.capitalized,
-                                      systemImage: service.status.icon)
-                                    .foregroundStyle(service.status.color)
-                            }
-                            
-                            if let user = service.user {
-                                HStack {
-                                    Text(L10n.Services.user)
-                                    Spacer()
-                                    Text(user)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            
-                            if let path = service.filePath {
-                                HStack {
-                                    Text(L10n.Services.filePath)
-                                    Spacer()
-                                    Text(path)
-                                        .font(.system(.body, design: .monospaced))
-                                        .textSelection(.enabled)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                    .formStyle(.grouped)
-                    .scrollContentBackground(.hidden)
-                    .background(Color(nsColor: .windowBackgroundColor))
-                    
-                    if let path = service.filePath {
-                        Form {
-                            Section {
-                                if let plistContent = plistContent {
-                                    PlistViewer(plistContent)
-                                        .padding(.vertical, 8)
-                                } else if let error = plistError {
-                                    Text(error)
-                                        .foregroundStyle(.red)
-                                } else {
-                                    ProgressView()
-                                        .padding()
-                                }
-                            } header: {
-                                Text(L10n.Services.configuration)
-                            }
-                        }
-                        .formStyle(.grouped)
-                        .scrollContentBackground(.hidden)
-                        .background(Color(nsColor: .windowBackgroundColor))
-                    }
-                }
-                .padding(.vertical)
-                .padding(.bottom, 60)
-            }
-            
-            VStack {
+    private struct ConfigurationHeader: View {
+        @Binding var viewMode: PlistViewMode
+        
+        var body: some View {
+            HStack {
+                Text(L10n.Services.configuration)
+                    .font(.headline)
                 Spacer()
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        showConfirmation = true
-                    }) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Label(service.status == .running ? L10n.Services.stopService : L10n.Services.startService,
-                                  systemImage: service.status == .running ? "stop.circle.fill" : "play.circle.fill")
-                        }
+                Picker("", selection: $viewMode) {
+                    ForEach([PlistViewMode.form, .xml], id: \.self) { mode in
+                        Label(mode.label, systemImage: mode.icon)
+                            .tag(mode)
                     }
-                    .disabled(isLoading)
-                    .buttonStyle(.borderedProminent)
-                    .tint(service.status == .running ? .red : .blue)
                 }
-                .padding()
-                .background(Color(nsColor: .windowBackgroundColor))
+                .pickerStyle(.segmented)
+                .frame(width: 160)
             }
         }
+    }
+    
+    private struct ConfigurationContent: View {
+        let plistContent: PlistParser.PlistValue?
+        let plistError: String?
+        let rawXMLContent: String?
+        let viewMode: PlistViewMode
+        
+        var body: some View {
+            Group {
+                if let error = plistError {
+                    Text(error)
+                        .foregroundStyle(.red)
+                } else if viewMode == .form {
+                    FormContentView(content: plistContent)
+                } else if viewMode == .xml {
+                    XMLContentView(content: rawXMLContent)
+                }
+            }
+        }
+    }
+    
+    private struct FormContentView: View {
+        let content: PlistParser.PlistValue?
+        
+        var body: some View {
+            if let content = content, let dict = content.dictionaryValue {
+                ForEach(Array(dict.keys).sorted(), id: \.self) { key in
+                    if let value = dict[key] {
+                        PlistValueRow(key: key, value: value)
+                    }
+                }
+            } else {
+                Text("No content available")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+    
+    private struct PlistValueRow: View {
+        let key: String
+        let value: PlistParser.PlistValue
+        
+        private func formatPlistValue(_ value: PlistParser.PlistValue) -> String {
+            switch value {
+            case .string(let str): return str
+            case .integer(let num): return "\(num)"
+            case .boolean(let bool): return bool ? "true" : "false"
+            case .array(let arr): return "[\(arr.count) items]"
+            case .dictionary(let dict): return "{\(dict.count) keys}"
+            }
+        }
+        
+        var body: some View {
+            switch value {
+            case .string(let str):
+                HStack {
+                    Text(key)
+                    Spacer()
+                    Text(str)
+                        .textSelection(.enabled)
+                        .foregroundStyle(.secondary)
+                }
+            case .integer(let num):
+                HStack {
+                    Text(key)
+                    Spacer()
+                    Text("\(num)")
+                        .textSelection(.enabled)
+                        .foregroundStyle(.secondary)
+                        .font(.system(.body, design: .monospaced))
+                }
+            case .boolean(let bool):
+                HStack {
+                    Text(key)
+                    Spacer()
+                    Image(systemName: bool ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundStyle(bool ? .green : .red)
+                }
+            case .array(let array):
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(key)
+                    ForEach(Array(array.enumerated()), id: \.offset) { _, value in
+                        Text(formatPlistValue(value))
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .padding(.leading, 16)
+                    }
+                }
+                .padding(.vertical, 4)
+            case .dictionary(let dict):
+                HStack {
+                    Text(key)
+                    Spacer()
+                    Text("\(dict.count) 项")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+    
+    private struct XMLContentView: View {
+        let content: String?
+        
+        var body: some View {
+            if let xml = content {
+                ScrollView([.horizontal], showsIndicators: true) {
+                    Text(xml)
+                        .font(.system(.body, design: .monospaced))
+                        .textSelection(.enabled)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(Color(nsColor: .textBackgroundColor))
+                .cornerRadius(6)
+            } else {
+                Text("No XML content available")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+    
+    private var buttonLabel: some View {
+        Group {
+            if isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                let isStarted = service.status == .started
+                Label(
+                    isStarted ? L10n.Services.stopService : L10n.Services.startService,
+                    systemImage: isStarted ? "stop.circle.fill" : "play.circle.fill"
+                )
+            }
+        }
+    }
+    
+    private var buttonTint: Color {
+        service.status == .started ? .red : .blue
+    }
+    
+    private var confirmationMessage: String {
+        let isStarted = service.status == .started
+        return isStarted ?
+            String(format: L10n.Services.confirmStop, service.name) :
+            String(format: L10n.Services.confirmStart, service.name)
+    }
+    
+    private func handleServiceAction() async {
+        isLoading = true
+        do {
+            let isStarted = service.status == .started
+            if isStarted {
+                try await homebrewManager.stopService(service)
+            } else {
+                try await homebrewManager.startService(service)
+            }
+            
+            try await homebrewManager.refreshServices()
+            
+            if let updatedService = homebrewManager.services.first(where: { $0.name == service.name }) {
+                selectedService = updatedService
+            }
+            
+            NotificationCenter.default.post(name: .refreshServices, object: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isLoading = false
+        showConfirmation = false
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                // 基本信息部分
+                Form {
+                    Section {
+                        HStack {
+                            Text(L10n.Services.name)
+                            Spacer()
+                            Text(service.name)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        HStack {
+                            Text(L10n.Services.status)
+                            Spacer()
+                            Label(service.status == .started ? "Started" : "Stopped",
+                                  systemImage: service.status == .started ? "play.circle.fill" : "stop.circle.fill")
+                                .foregroundStyle(service.status == .started ? .green : .red)
+                        }
+                        
+                        if let user = service.user {
+                            HStack {
+                                Text(L10n.Services.user)
+                                Spacer()
+                                Text(user)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        if let path = service.filePath {
+                            HStack {
+                                Text(L10n.Services.filePath)
+                                Spacer()
+                                Text(path)
+                                    .font(.system(.body, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .formStyle(.grouped)
+                .scrollContentBackground(.hidden)
+                
+                // 配置部分
+                Form {
+                    Section {
+                        ConfigurationHeader(viewMode: $viewMode)
+                        ConfigurationContent(
+                            plistContent: plistContent,
+                            plistError: plistError,
+                            rawXMLContent: rawXMLContent,
+                            viewMode: viewMode
+                        )
+                    }
+                }
+                .formStyle(.grouped)
+                .scrollContentBackground(.hidden)
+            }
+            .padding(.bottom, 60)
+        }
+        .safeAreaInset(edge: .bottom) {
+            HStack {
+                Spacer()
+                Button(action: { showConfirmation = true }) {
+                    buttonLabel
+                }
+                .disabled(isLoading)
+                .buttonStyle(.borderedProminent)
+                .tint(buttonTint)
+            }
+            .padding()
+            .background(.bar)
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             loadPlistContent()
+        }
+        .onChange(of: viewMode) { _ in
+            if viewMode == .form && plistContent == nil && rawXMLContent != nil {
+                parseXMLContent()
+            }
         }
         .alert(Text(L10n.Common.error), isPresented: Binding(
             get: { errorMessage != nil },
@@ -952,39 +1127,32 @@ struct ServiceDetailPanel: View {
         }
         .alert(Text(L10n.Common.confirm), isPresented: $showConfirmation) {
             Button(L10n.Common.ok) {
-                Task {
-                    isLoading = true
-                    do {
-                        if service.status == .running {
-                            try await homebrewManager.stopService(service)
-                        } else {
-                            try await homebrewManager.startService(service)
-                        }
-                        
-                        // 刷新服务列表
-                        try await homebrewManager.refreshServices()
-                        
-                        // 更新选中的服务
-                        if let updatedService = homebrewManager.services.first(where: { $0.name == service.name }) {
-                            selectedService = updatedService
-                        }
-                        
-                        // 发送通知以刷新服务列表
-                        NotificationCenter.default.post(name: .refreshServices, object: nil)
-                    } catch {
-                        errorMessage = error.localizedDescription
-                    }
-                    isLoading = false
-                    showConfirmation = false
-                }
+                Task { await handleServiceAction() }
             }
             Button(L10n.Common.cancel, role: .cancel) {
                 showConfirmation = false
             }
         } message: {
-            Text(service.status == .running ?
-                String(format: L10n.Services.confirmStop, service.name) :
-                String(format: L10n.Services.confirmStart, service.name))
+            Text(confirmationMessage)
+        }
+    }
+    
+    enum PlistViewMode {
+        case form
+        case xml
+        
+        var icon: String {
+            switch self {
+            case .form: return "list.bullet.rectangle"
+            case .xml: return "doc.text"
+            }
+        }
+        
+        var label: String {
+            switch self {
+            case .form: return "配置摘要"
+            case .xml: return "配置文件"
+            }
         }
     }
     
@@ -995,45 +1163,103 @@ struct ServiceDetailPanel: View {
             do {
                 print("尝试读取配置文件: \(path)")
                 
-                // 使用 cat 命令读取文件
-                let process = Process()
-                let pipe = Pipe()
-                process.executableURL = URL(fileURLWithPath: "/bin/cat")
-                process.arguments = [path]
-                process.standardOutput = pipe
-                process.standardError = pipe
+                // 展开路径中的 ~
+                let expandedPath = (path as NSString).expandingTildeInPath
+                print("展开后的路径: \(expandedPath)")
                 
-                print("执行命令: cat \(path)")
-                try process.run()
-                process.waitUntilExit()
-                
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let status = process.terminationStatus
-                print("命令执行完成，退出状态: \(status)")
-                
-                if status == 0,
-                   let xmlString = String(data: data, encoding: .utf8) {
-                    print("成功读取文件内容，长度: \(xmlString.count) 字符")
-                    let content = try PlistParser.parse(xmlString: xmlString)
-                    print("成功解析 plist 内容")
-                    await MainActor.run { @MainActor in
-                        self.plistContent = content
-                        self.plistError = nil
-                    }
-                } else {
-                    let errorOutput = String(data: data, encoding: .utf8) ?? "未知错误"
-                    print("读取文件失败: \(errorOutput)")
+                // 检查文件是否存在和权限
+                let fileManager = FileManager.default
+                guard fileManager.fileExists(atPath: expandedPath) else {
                     throw NSError(domain: "PlistParser",
-                                code: Int(status),
-                                userInfo: [NSLocalizedDescriptionKey: "文件读取失败: \(errorOutput)"])
+                                code: 1,
+                                userInfo: [NSLocalizedDescriptionKey: "配置文件不存在"])
+                }
+                
+                guard fileManager.isReadableFile(atPath: expandedPath) else {
+                    throw NSError(domain: "PlistParser",
+                                code: 2,
+                                userInfo: [NSLocalizedDescriptionKey: "配置文件无法读取，请检查权限"])
+                }
+                
+                // 读取原始 XML 内容
+                let xmlString = try String(contentsOf: URL(fileURLWithPath: expandedPath), encoding: .utf8)
+                print("成功读取文件内容")
+                
+                await MainActor.run { @MainActor in
+                    self.rawXMLContent = xmlString
+                    self.plistError = nil
+                    
+                    // 如果当前是 Form 视图，立即解析内容
+                    if viewMode == .form {
+                        parseXMLContent()
+                    }
                 }
             } catch {
                 print("处理配置文件时出错: \(error)")
                 await MainActor.run { @MainActor in
-                    self.plistError = "无法读取配置文件: \(error.localizedDescription)"
+                    self.rawXMLContent = nil
                     self.plistContent = nil
+                    self.plistError = error.localizedDescription
                 }
             }
+        }
+    }
+    
+    private func parseXMLContent() {
+        guard let xmlString = rawXMLContent else { return }
+        
+        do {
+            // 将 XML 字符串转换为 Data
+            guard let data = xmlString.data(using: .utf8) else {
+                throw NSError(domain: "PlistParser",
+                            code: 3,
+                            userInfo: [NSLocalizedDescriptionKey: "无法将 XML 转换为数据"])
+            }
+            
+            // 解析 plist
+            var format = PropertyListSerialization.PropertyListFormat.xml
+            guard let plist = try PropertyListSerialization.propertyList(from: data,
+                                                                      options: .mutableContainersAndLeaves,
+                                                                      format: &format) as? [String: Any] else {
+                throw NSError(domain: "PlistParser",
+                            code: 4,
+                            userInfo: [NSLocalizedDescriptionKey: "无法解析 plist 内容"])
+            }
+            
+            // 转换为 PlistValue
+            let content = try convertToPlistValue(plist)
+            print("成功解析 plist 内容")
+            
+            self.plistContent = content
+        } catch {
+            print("解析 XML 内容时出错: \(error)")
+            self.plistContent = nil
+            self.plistError = error.localizedDescription
+        }
+    }
+    
+    private func convertToPlistValue(_ value: Any) throws -> PlistParser.PlistValue {
+        switch value {
+        case let string as String:
+            return .string(string)
+        case let number as Int:
+            return .integer(number)
+        case let number as Int64:
+            return .integer(Int(number))
+        case let number as Int32:
+            return .integer(Int(number))
+        case let bool as Bool:
+            return .boolean(bool)
+        case let array as [Any]:
+            return .array(try array.map { try convertToPlistValue($0) })
+        case let dict as [String: Any]:
+            var result: [String: PlistParser.PlistValue] = [:]
+            for (key, value) in dict {
+                result[key] = try convertToPlistValue(value)
+            }
+            return .dictionary(result)
+        default:
+            return .string(String(describing: value))
         }
     }
 }
@@ -1873,3 +2099,4 @@ struct ChangelogView: View {
     }
 }
 // --- End ChangelogView --- 
+
