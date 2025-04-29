@@ -96,12 +96,21 @@ jobs:
       - name: Update version and build number
         run: |
           PLIST_PATH="${PLIST_PATH:-./Kettle/Info.plist}"
+
+          # 确保使用标准格式的版本号和构建号
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$PLIST_PATH"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$PLIST_PATH"
           
           echo "📱 App version updated to $VERSION (Build: $BUILD_NUMBER)"
           echo "Info.plist content:"
           cat "$PLIST_PATH"
+          
+          # 确保构建前能看到更新后的 Info.plist
+          cp -f "$PLIST_PATH" "./Kettle/Info.plist" || echo "Already in the right place"
+          
+          # 确认最终的 Info.plist 内容
+          echo "Final Info.plist content for build:"
+          cat "./Kettle/Info.plist"
       
       - name: List available schemes
         run: |
@@ -111,19 +120,36 @@ jobs:
       - name: Build app
         run: |
           # 尝试构建应用
-          xcodebuild clean archive -project "Kettle.xcodeproj" -scheme "Kettle" -archivePath "build/Kettle.xcarchive" CODE_SIGN_IDENTITY="-" || {
+          xcodebuild clean archive \
+            -project "Kettle.xcodeproj" \
+            -scheme "Kettle" \
+            -archivePath "build/Kettle.xcarchive" \
+            CODE_SIGN_IDENTITY="-" \
+            CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
+            MARKETING_VERSION=$VERSION || {
+            
             echo "Build failed. Trying alternate scheme..."
             # 尝试构建第一个找到的 scheme
             FIRST_SCHEME=$(xcodebuild -list -project "Kettle.xcodeproj" -json 2>/dev/null | grep -o '"name" : "[^"]*"' | head -1 | cut -d'"' -f4)
             if [ -n "$FIRST_SCHEME" ]; then
               echo "Trying to build with scheme: $FIRST_SCHEME"
-              xcodebuild clean archive -project "Kettle.xcodeproj" -scheme "$FIRST_SCHEME" -archivePath "build/Kettle.xcarchive" CODE_SIGN_IDENTITY="-"
+              xcodebuild clean archive \
+                -project "Kettle.xcodeproj" \
+                -scheme "$FIRST_SCHEME" \
+                -archivePath "build/Kettle.xcarchive" \
+                CODE_SIGN_IDENTITY="-" \
+                CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
+                MARKETING_VERSION=$VERSION
             else
               echo "No schemes found. Build failed."
               exit 1
             fi
           }
       
+      - name: Install create-dmg
+        run: |
+          brew install create-dmg
+          
       - name: Create DMG
         run: |
           # 创建临时目录
@@ -141,8 +167,49 @@ jobs:
             fi
           }
           
-          # 创建 DMG
-          hdiutil create -volname "Kettle" -srcfolder build/dmg -ov -format UDZO "build/$DMG_NAME"
+          # 创建带有 Applications 链接的 DMG
+          APP_NAME="Kettle"
+          DMG_DIR="build/dmg_final"
+          mkdir -p "$DMG_DIR"
+          cp -R "build/dmg/Kettle.app" "$DMG_DIR"
+          
+          # 创建指向 Applications 的符号链接
+          ln -s /Applications "$DMG_DIR/Applications"
+          
+          # 使用 create-dmg 创建美观的 DMG
+          DMG_PATH="build/$DMG_NAME"
+          
+          # 检查是否有图标文件
+          ICON_OPTION=""
+          if [ -f "Kettle/Resources/AppIcon.icns" ]; then
+            ICON_OPTION="--volicon Kettle/Resources/AppIcon.icns"
+          fi
+          
+          # 检查是否有背景图像
+          BG_OPTION=""
+          if [ -f "Kettle/Resources/dmg-background.png" ]; then
+            BG_OPTION="--background Kettle/Resources/dmg-background.png"
+          fi
+          
+          create-dmg \
+            --volname "$APP_NAME" \
+            $ICON_OPTION \
+            $BG_OPTION \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "$APP_NAME.app" 150 190 \
+            --hide-extension "$APP_NAME.app" \
+            --app-drop-link 450 190 \
+            --no-internet-enable \
+            "$DMG_PATH" \
+            "$DMG_DIR" \
+          || {
+            echo "Failed to create fancy DMG. Falling back to simple DMG with Applications link."
+            # 创建简单的 DMG 作为备选，但保留 Applications 链接
+            hdiutil create -volname "Kettle" -srcfolder "$DMG_DIR" -ov -format UDZO "$DMG_PATH"
+          }
+          
           echo "📦 App built and DMG created at build/$DMG_NAME"
       
       - name: Upload DMG as artifact
