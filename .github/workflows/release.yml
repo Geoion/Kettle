@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build and Release
     runs-on: macos-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
@@ -143,13 +145,17 @@ jobs:
           hdiutil create -volname "Kettle" -srcfolder build/dmg -ov -format UDZO "build/$DMG_NAME"
           echo "📦 App built and DMG created at build/$DMG_NAME"
       
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload DMG as artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: Kettle ${{ env.VERSION }}
-          draft: false
-          prerelease: false
-          files: build/${{ env.DMG_NAME }}
+          name: Kettle-${{ env.VERSION }}-${{ env.BUILD_NUMBER }}
+          path: build/${{ env.DMG_NAME }}
+          
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/${{ env.DMG_NAME }}"
+          name: "Kettle ${{ env.VERSION }}"
           body: |
             # Kettle v${{ env.VERSION }} (Build ${{ env.BUILD_NUMBER }})
             
@@ -158,6 +164,6 @@ jobs:
             - 构建时间: ${{ env.BUILD_NUMBER }}
             
             ## 下载
-            - macOS: [Kettle-${{ env.VERSION }}.dmg](https://github.com/Geoion/kettle/releases/download/v${{ env.VERSION }}/Kettle-${{ env.VERSION }}.dmg)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+            - macOS: Kettle-${{ env.VERSION }}.dmg
+          allowUpdates: true
+          makeLatest: true 
