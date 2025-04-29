@@ -22,76 +22,128 @@ jobs:
           xcode-version: 'latest-stable'
       
       - name: Setup variables
-        id: setup
         run: |
           # 获取版本号（移除 'v' 前缀）
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
-          # 获取上一个构建号并增加
-          LAST_BUILD_NUMBER=$(defaults read $(pwd)/Kettle/Info.plist CFBundleVersion 2>/dev/null || echo "0")
-          BUILD_NUMBER=$((LAST_BUILD_NUMBER + 1))
+          # 设置构建号（使用时间戳）
+          BUILD_NUMBER=$(date +%Y%m%d%H%M)
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           
           # 设置 DMG 文件名
           DMG_NAME="Kettle-$VERSION.dmg"
           echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
-          echo "dmg_name=$DMG_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Find Info.plist
+        run: |
+          # 查找项目中的所有 Info.plist 文件
+          PLIST_FILES=$(find . -name "Info.plist" | grep -v "build" || echo "")
+          echo "Found Info.plist files: $PLIST_FILES"
+          
+          # 如果找到多个文件，选择 Kettle/Info.plist
+          if [[ -f "./Kettle/Info.plist" ]]; then
+            echo "PLIST_PATH=./Kettle/Info.plist" >> $GITHUB_ENV
+            echo "Found main Info.plist at ./Kettle/Info.plist"
+          elif [[ -n "$PLIST_FILES" ]]; then
+            # 使用找到的第一个 Info.plist
+            FIRST_PLIST=$(echo "$PLIST_FILES" | head -n 1)
+            echo "PLIST_PATH=$FIRST_PLIST" >> $GITHUB_ENV
+            echo "Using Info.plist at $FIRST_PLIST"
+          else
+            echo "No Info.plist found. Will create one."
+            mkdir -p Kettle
+            echo "PLIST_PATH=./Kettle/Info.plist" >> $GITHUB_ENV
+          fi
+      
+      - name: Create Info.plist if needed
+        run: |
+          PLIST_PATH="${PLIST_PATH:-./Kettle/Info.plist}"
+          if [ ! -f "$PLIST_PATH" ]; then
+            echo "Creating new Info.plist at $PLIST_PATH"
+            mkdir -p $(dirname "$PLIST_PATH")
+            echo '<?xml version="1.0" encoding="UTF-8"?>' > "$PLIST_PATH"
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> "$PLIST_PATH"
+            echo '<plist version="1.0">' >> "$PLIST_PATH"
+            echo '<dict>' >> "$PLIST_PATH"
+            echo '    <key>CFBundleIconFile</key>' >> "$PLIST_PATH"
+            echo '    <string>AppIcon</string>' >> "$PLIST_PATH"
+            echo '    <key>CFBundleIconName</key>' >> "$PLIST_PATH"
+            echo '    <string>AppIcon</string>' >> "$PLIST_PATH"
+            echo '    <key>CFBundleShortVersionString</key>' >> "$PLIST_PATH"
+            echo '    <string>1.0.0</string>' >> "$PLIST_PATH"
+            echo '    <key>CFBundleVersion</key>' >> "$PLIST_PATH"
+            echo '    <string>1</string>' >> "$PLIST_PATH"
+            echo '</dict>' >> "$PLIST_PATH"
+            echo '</plist>' >> "$PLIST_PATH"
+          fi
+      
+      - name: Check and add required keys
+        run: |
+          PLIST_PATH="${PLIST_PATH:-./Kettle/Info.plist}"
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST_PATH" &>/dev/null; then
+            echo "Adding CFBundleShortVersionString to Info.plist"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string 1.0.0" "$PLIST_PATH"
+          fi
+          
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST_PATH" &>/dev/null; then
+            echo "Adding CFBundleVersion to Info.plist"
+            /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string 1" "$PLIST_PATH"
+          fi
       
       - name: Update version and build number
         run: |
-          # 确保目录存在
-          mkdir -p Kettle
-          
-          # 检查 Info.plist 是否存在，如果不存在则创建
-          if [ ! -f Kettle/Info.plist ]; then
-            echo '<?xml version="1.0" encoding="UTF-8"?>' > Kettle/Info.plist
-            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> Kettle/Info.plist
-            echo '<plist version="1.0">' >> Kettle/Info.plist
-            echo '<dict>' >> Kettle/Info.plist
-            echo '    <key>CFBundleIconFile</key>' >> Kettle/Info.plist
-            echo '    <string>AppIcon</string>' >> Kettle/Info.plist
-            echo '    <key>CFBundleIconName</key>' >> Kettle/Info.plist
-            echo '    <string>AppIcon</string>' >> Kettle/Info.plist
-            echo '    <key>CFBundleShortVersionString</key>' >> Kettle/Info.plist
-            echo '    <string>1.0.0</string>' >> Kettle/Info.plist
-            echo '    <key>CFBundleVersion</key>' >> Kettle/Info.plist
-            echo '    <string>1</string>' >> Kettle/Info.plist
-            echo '</dict>' >> Kettle/Info.plist
-            echo '</plist>' >> Kettle/Info.plist
-          fi
-          
-          # 更新版本号和构建号
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Kettle/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" Kettle/Info.plist
+          PLIST_PATH="${PLIST_PATH:-./Kettle/Info.plist}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$PLIST_PATH"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$PLIST_PATH"
           
           echo "📱 App version updated to $VERSION (Build: $BUILD_NUMBER)"
+          echo "Info.plist content:"
+          cat "$PLIST_PATH"
+      
+      - name: List available schemes
+        run: |
+          echo "Available schemes:"
+          xcodebuild -list -project "Kettle.xcodeproj" || echo "Failed to list schemes"
       
       - name: Build app
         run: |
-          # 设置 Xcode 项目路径
-          XCODEPROJ_PATH="Kettle.xcodeproj"
-          
-          # 构建应用
-          xcodebuild clean archive -project "$XCODEPROJ_PATH" -scheme "Kettle" -archivePath "build/Kettle.xcarchive" CODE_SIGN_IDENTITY="-"
-          
-          # 导出为 DMG
-          # 注意：这里简化了，实际可能需要更复杂的步骤创建 DMG
-          # 如果您有现成的脚本创建 DMG，可以调用它
-          
+          # 尝试构建应用
+          xcodebuild clean archive -project "Kettle.xcodeproj" -scheme "Kettle" -archivePath "build/Kettle.xcarchive" CODE_SIGN_IDENTITY="-" || {
+            echo "Build failed. Trying alternate scheme..."
+            # 尝试构建第一个找到的 scheme
+            FIRST_SCHEME=$(xcodebuild -list -project "Kettle.xcodeproj" -json 2>/dev/null | grep -o '"name" : "[^"]*"' | head -1 | cut -d'"' -f4)
+            if [ -n "$FIRST_SCHEME" ]; then
+              echo "Trying to build with scheme: $FIRST_SCHEME"
+              xcodebuild clean archive -project "Kettle.xcodeproj" -scheme "$FIRST_SCHEME" -archivePath "build/Kettle.xcarchive" CODE_SIGN_IDENTITY="-"
+            else
+              echo "No schemes found. Build failed."
+              exit 1
+            fi
+          }
+      
+      - name: Create DMG
+        run: |
           # 创建临时目录
           mkdir -p build/dmg
-          cp -R build/Kettle.xcarchive/Products/Applications/Kettle.app build/dmg/
+          cp -R build/Kettle.xcarchive/Products/Applications/Kettle.app build/dmg/ || {
+            echo "Failed to copy app. Checking actual path..."
+            find build -name "*.app"
+            APP_PATH=$(find build -name "*.app" | head -1)
+            if [ -n "$APP_PATH" ]; then
+              echo "Found app at: $APP_PATH"
+              cp -R "$APP_PATH" build/dmg/
+            else
+              echo "No app found. Build failed."
+              exit 1
+            fi
+          }
           
           # 创建 DMG
           hdiutil create -volname "Kettle" -srcfolder build/dmg -ov -format UDZO "build/$DMG_NAME"
-          
           echo "📦 App built and DMG created at build/$DMG_NAME"
       
       - name: Create GitHub Release
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           name: Kettle ${{ env.VERSION }}
