@@ -1591,10 +1591,16 @@ struct AboutView: View {
                         VStack(spacing: 4) {
                             Text("Kettle") // App Name
                                 .font(.system(size: 24, weight: .medium))
-                            // Combine Version and Build
-                            Text("\(NSLocalizedString("Version", comment: "Version label")) \(versionString) (\(buildString))") 
+                            
+                            // Split version and build for better presentation
+                            Text("\(NSLocalizedString("Version", comment: "Version label")) \(versionString)")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                            
+                            Text("\(NSLocalizedString("Build", comment: "Build label")) \(buildString)")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                                 .textSelection(.enabled)
                         }
                     }

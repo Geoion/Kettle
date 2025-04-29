@@ -39,6 +39,8 @@
 
 // Version Info
 "Version %@" = "版本 %@";
+"Version" = "版本";
+"Build" = "構建";
 "Developer" = "開發者";
 "Contact" = "聯絡方式";
 "Repository" = "程式碼倉庫";

@@ -157,6 +157,7 @@
 
 // About View Specific
 "Version" = "Version";
+"Build" = "Build";
 "settings.about.informationHeader" = "Information";
 "settings.about.developer" = "Developer";
 "settings.about.contact" = "Contact";

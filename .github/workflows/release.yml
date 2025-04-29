@@ -143,20 +143,41 @@ jobs:
           hdiutil create -volname "Kettle" -srcfolder build/dmg -ov -format UDZO "build/$DMG_NAME"
           echo "📦 App built and DMG created at build/$DMG_NAME"
       
-      - name: Create GitHub Release
+      - name: Check if Release Already Exists
+        id: check_release
+        run: |
+          TAG_NAME="v$VERSION"
+          RELEASE_URL="https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG_NAME"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token $GITHUB_TOKEN" $RELEASE_URL)
+          
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Release already exists for tag $TAG_NAME. Will update existing release."
+            echo "RELEASE_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "No existing release found for tag $TAG_NAME. Will create new release."
+            echo "RELEASE_EXISTS=false" >> $GITHUB_ENV
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           name: Kettle ${{ env.VERSION }}
           draft: false
           prerelease: false
           files: build/${{ env.DMG_NAME }}
+          tag_name: v${{ env.VERSION }}
           body: |
             # Kettle v${{ env.VERSION }} (Build ${{ env.BUILD_NUMBER }})
             
             ## 更新内容
             - 自动从 Git tag 构建的版本
+            - 构建时间: ${{ env.BUILD_NUMBER }}
             
             ## 下载
             - macOS: [Kettle-${{ env.VERSION }}.dmg](https://github.com/Geoion/kettle/releases/download/v${{ env.VERSION }}/Kettle-${{ env.VERSION }}.dmg)
+          fail_on_unmatched_files: false
+          overwrite: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

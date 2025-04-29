@@ -113,6 +113,8 @@
 "backup.restoreFailed" = "恢复配置失败：%@";
 
 // About View Specific
+"Version" = "版本";
+"Build" = "构建";
 "settings.about.informationHeader" = "信息";
 "settings.about.developer" = "开发者";
 "settings.about.contact" = "联系方式";
