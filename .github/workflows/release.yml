@@ -1,65 +1,110 @@
-name: Release
+name: Build and Release
 
 on:
   push:
     tags:
-      - 'v*' # 当推送版本标签时触发，例如 v1.0.0
+      - 'v*'
 
 jobs:
-  build-and-release:
+  build:
+    name: Build and Release
     runs-on: macos-latest
-    permissions:
-      contents: write
-      packages: write
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
-
-      - name: Install dependencies
+          xcode-version: 'latest-stable'
+      
+      - name: Setup variables
+        id: setup
         run: |
-          brew install create-dmg
+          # 获取版本号（移除 'v' 前缀）
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
+          # 获取上一个构建号并增加
+          LAST_BUILD_NUMBER=$(defaults read $(pwd)/Kettle/Info.plist CFBundleVersion 2>/dev/null || echo "0")
+          BUILD_NUMBER=$((LAST_BUILD_NUMBER + 1))
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          
+          # 设置 DMG 文件名
+          DMG_NAME="Kettle-$VERSION.dmg"
+          echo "DMG_NAME=$DMG_NAME" >> $GITHUB_ENV
+          echo "dmg_name=$DMG_NAME" >> $GITHUB_OUTPUT
+      
+      - name: Update version and build number
+        run: |
+          # 确保目录存在
+          mkdir -p Kettle
+          
+          # 检查 Info.plist 是否存在，如果不存在则创建
+          if [ ! -f Kettle/Info.plist ]; then
+            echo '<?xml version="1.0" encoding="UTF-8"?>' > Kettle/Info.plist
+            echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> Kettle/Info.plist
+            echo '<plist version="1.0">' >> Kettle/Info.plist
+            echo '<dict>' >> Kettle/Info.plist
+            echo '    <key>CFBundleIconFile</key>' >> Kettle/Info.plist
+            echo '    <string>AppIcon</string>' >> Kettle/Info.plist
+            echo '    <key>CFBundleIconName</key>' >> Kettle/Info.plist
+            echo '    <string>AppIcon</string>' >> Kettle/Info.plist
+            echo '    <key>CFBundleShortVersionString</key>' >> Kettle/Info.plist
+            echo '    <string>1.0.0</string>' >> Kettle/Info.plist
+            echo '    <key>CFBundleVersion</key>' >> Kettle/Info.plist
+            echo '    <string>1</string>' >> Kettle/Info.plist
+            echo '</dict>' >> Kettle/Info.plist
+            echo '</plist>' >> Kettle/Info.plist
+          fi
+          
+          # 更新版本号和构建号
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Kettle/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" Kettle/Info.plist
+          
+          echo "📱 App version updated to $VERSION (Build: $BUILD_NUMBER)"
+      
       - name: Build app
         run: |
-          xcodebuild -scheme Kettle -configuration Release -derivedDataPath build
-
-      - name: Create DMG
-        run: |
-          mkdir -p dist
-          create-dmg \
-            --volname "Kettle" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon-size 100 \
-            --icon "Kettle.app" 200 190 \
-            --hide-extension "Kettle.app" \
-            --app-drop-link 600 185 \
-            "dist/Kettle.dmg" \
-            "build/Build/Products/Release/Kettle.app"
-
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Create Release
+          # 设置 Xcode 项目路径
+          XCODEPROJ_PATH="Kettle.xcodeproj"
+          
+          # 构建应用
+          xcodebuild clean archive -project "$XCODEPROJ_PATH" -scheme "Kettle" -archivePath "build/Kettle.xcarchive" CODE_SIGN_IDENTITY="-"
+          
+          # 导出为 DMG
+          # 注意：这里简化了，实际可能需要更复杂的步骤创建 DMG
+          # 如果您有现成的脚本创建 DMG，可以调用它
+          
+          # 创建临时目录
+          mkdir -p build/dmg
+          cp -R build/Kettle.xcarchive/Products/Applications/Kettle.app build/dmg/
+          
+          # 创建 DMG
+          hdiutil create -volname "Kettle" -srcfolder build/dmg -ov -format UDZO "build/$DMG_NAME"
+          
+          echo "📦 App built and DMG created at build/$DMG_NAME"
+      
+      - name: Create GitHub Release
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/Kettle.dmg
-          name: Release ${{ env.VERSION }}
+          name: Kettle ${{ env.VERSION }}
           draft: false
           prerelease: false
-          generate_release_notes: true
-
-      - name: Upload to GitHub Packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: Kettle-${{ env.VERSION }}
-          path: dist/Kettle.dmg
-          if-no-files-found: error 
+          files: build/${{ env.DMG_NAME }}
+          body: |
+            # Kettle v${{ env.VERSION }} (Build ${{ env.BUILD_NUMBER }})
+            
+            ## 更新内容
+            - 自动从 Git tag 构建的版本
+            
+            ## 下载
+            - macOS: [Kettle-${{ env.VERSION }}.dmg](https://github.com/Geoion/kettle/releases/download/v${{ env.VERSION }}/Kettle-${{ env.VERSION }}.dmg)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

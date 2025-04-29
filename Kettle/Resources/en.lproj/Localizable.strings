@@ -180,4 +180,16 @@
 // Casks List
 "casks.searchPlaceholder" = "Search Casks";
 "casks.noneAvailable" = "No casks installed or cache empty.";
-"casks.noResults" = "No casks found matching search."; 
+"casks.noResults" = "No casks found matching search.";
+
+/* Update Feature */
+"settings.update.available" = "Version %@ is available";
+"settings.update.notAvailable" = "Your app is up to date";
+"settings.update.error" = "Error checking for updates";
+"settings.update.checking" = "Checking for updates";
+"settings.update.download" = "Download";
+"settings.update.viewRelease" = "View Release";
+"settings.update.close" = "Close";
+"settings.update.whatsNew" = "What's New";
+"settings.update.header" = "Update Available";
+"settings.update.versionAvailable" = "Version %@ is now available"; 

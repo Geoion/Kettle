@@ -1569,6 +1569,8 @@ struct AboutView: View {
     let websiteURL = URL(string: "https://github.com/Geoion/kettle")!
     let emailURL = URL(string: "mailto:eski.yin@gmail.com")!
     @State private var showingChangelog = false
+    @StateObject private var updateService = UpdateService.shared
+    @State private var showingUpdateDialog = false
     
     var body: some View {
         ZStack { // Keep ZStack for background color
@@ -1656,15 +1658,62 @@ struct AboutView: View {
                     }
                     .buttonStyle(.plain)
                     
-                    Button(action: { /* TODO: Implement update check */ }) {
-                        Label(NSLocalizedString("settings.about.checkUpdates", comment: "Check Updates button"), systemImage: "arrow.down.circle")
+                    Button(action: {
+                        Task {
+                            await updateService.checkForUpdates()
+                            if case .updateAvailable = updateService.updateStatus {
+                                showingUpdateDialog = true
+                            }
+                        }
+                    }) {
+                        HStack {
+                            if case .checking = updateService.updateStatus {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(width: 16, height: 16)
+                            } else {
+                                Image(systemName: "arrow.down.circle")
+                            }
+                            Text(NSLocalizedString("settings.about.checkUpdates", comment: "Check Updates button"))
+                            
+                            Spacer()
+                            
+                            if case .updateAvailable = updateService.updateStatus {
+                                Text("●")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 10, weight: .bold))
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
-                    .disabled(true) // Disable until implemented
+                    .disabled({
+                        if case .checking = updateService.updateStatus {
+                            return true
+                        }
+                        return false
+                    }())
                 } header: {
                     Text(NSLocalizedString("settings.about.actionsHeader", comment: "Actions header in About view"))
                 } footer: {
-                    EmptyView()
+                    if case .updateAvailable(let version, _, _) = updateService.updateStatus {
+                        Text(String(format: Settings.updateAvailable, version))
+                            .foregroundColor(.blue)
+                    } else if case .error(let message) = updateService.updateStatus {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(Settings.updateError)
+                                .foregroundColor(.red)
+                            Text(message)
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                    } else if case .upToDate = updateService.updateStatus {
+                        Text(Settings.updateNotAvailable)
+                            .foregroundColor(.secondary)
+                    } else if case .checking = updateService.updateStatus {
+                        Text(Settings.updateChecking)
+                            .foregroundStyle(.secondary)
+                            .italic()
+                    }
                 }
                 
                 // Section 4: Footer
@@ -1689,6 +1738,93 @@ struct AboutView: View {
         .sheet(isPresented: $showingChangelog) {
             ChangelogView()
         }
+        .sheet(isPresented: $showingUpdateDialog) {
+            if case .updateAvailable(let version, let releaseUrl, let downloadUrl) = updateService.updateStatus {
+                UpdateView(version: version, releaseUrl: releaseUrl, downloadUrl: downloadUrl)
+            }
+        }
+        .task {
+            // Check for updates on view appear
+            await updateService.checkForUpdates()
+        }
+    }
+}
+
+struct UpdateView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    
+    let version: String
+    let releaseUrl: String
+    let downloadUrl: String
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Header
+            VStack(spacing: 8) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .foregroundStyle(.blue)
+                
+                Text(Settings.updateHeader)
+                    .font(.system(size: 18, weight: .semibold))
+                
+                Text(String(format: Settings.updateVersionAvailable, version))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 20)
+            
+            Divider()
+            
+            // Release notes
+            if let latestRelease = UpdateService.shared.latestRelease {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(Settings.updateWhatsNew)
+                            .font(.headline)
+                        
+                        Text(latestRelease.body)
+                            .font(.body)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                }
+                .frame(maxHeight: 200)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                )
+            }
+            
+            // Buttons
+            HStack(spacing: 16) {
+                Button(Settings.updateClose) {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+                
+                Button(Settings.updateViewRelease) {
+                    if let url = URL(string: releaseUrl) {
+                        openURL(url)
+                    }
+                }
+                
+                Button(Settings.updateDownload) {
+                    if let url = URL(string: downloadUrl) {
+                        openURL(url)
+                        dismiss()
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(.bottom, 20)
+        }
+        .frame(width: 500)
+        .padding(.horizontal)
     }
 }
 

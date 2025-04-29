@@ -99,4 +99,16 @@
 "Package Information" = "패키지 정보";
 "Name" = "이름";
 "Version" = "버전";
-"Description" = "설명"; 
+"Description" = "설명";
+
+/* Update Feature */
+"settings.update.available" = "버전 %@ 사용 가능";
+"settings.update.notAvailable" = "앱이 최신 상태입니다";
+"settings.update.error" = "업데이트 확인 중 오류 발생";
+"settings.update.checking" = "업데이트 확인 중";
+"settings.update.download" = "다운로드";
+"settings.update.viewRelease" = "릴리스 정보 보기";
+"settings.update.close" = "닫기";
+"settings.update.whatsNew" = "새로운 기능";
+"settings.update.header" = "업데이트 가능";
+"settings.update.versionAvailable" = "버전 %@ 사용 가능"; 

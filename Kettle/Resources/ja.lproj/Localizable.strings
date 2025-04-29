@@ -99,4 +99,16 @@
 "Package Information" = "パッケージ情報";
 "Name" = "名前";
 "Version" = "バージョン";
-"Description" = "説明"; 
+"Description" = "説明";
+
+/* Update Feature */
+"settings.update.available" = "バージョン %@ が利用可能です";
+"settings.update.notAvailable" = "お使いのアプリは最新です";
+"settings.update.error" = "アップデートの確認中にエラーが発生しました";
+"settings.update.checking" = "アップデートを確認中";
+"settings.update.download" = "ダウンロード";
+"settings.update.viewRelease" = "リリース情報を見る";
+"settings.update.close" = "閉じる";
+"settings.update.whatsNew" = "新機能";
+"settings.update.header" = "アップデートが利用可能";
+"settings.update.versionAvailable" = "バージョン %@ が利用可能です"; 

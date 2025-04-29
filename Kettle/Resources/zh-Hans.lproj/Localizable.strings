@@ -136,4 +136,16 @@
 // Casks List
 "casks.searchPlaceholder" = "搜索应用";
 "casks.noneAvailable" = "未安装应用或缓存为空。";
-"casks.noResults" = "未找到匹配的应用。"; 
+"casks.noResults" = "未找到匹配的应用。";
+
+/* Update Feature */
+"settings.update.available" = "版本 %@ 可更新";
+"settings.update.notAvailable" = "您的应用已是最新版本";
+"settings.update.error" = "检查更新出错";
+"settings.update.checking" = "正在检查更新";
+"settings.update.download" = "下载";
+"settings.update.viewRelease" = "查看发布信息";
+"settings.update.close" = "关闭";
+"settings.update.whatsNew" = "新增内容";
+"settings.update.header" = "发现新版本";
+"settings.update.versionAvailable" = "版本 %@ 已可用"; 

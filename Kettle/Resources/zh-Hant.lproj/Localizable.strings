@@ -99,4 +99,16 @@
 "Package Information" = "軟體包資訊";
 "Name" = "名稱";
 "Version" = "版本";
-"Description" = "描述"; 
+"Description" = "描述";
+
+/* Update Feature */
+"settings.update.available" = "版本 %@ 可更新";
+"settings.update.notAvailable" = "您的應用已是最新版本";
+"settings.update.error" = "檢查更新出錯";
+"settings.update.checking" = "正在檢查更新";
+"settings.update.download" = "下載";
+"settings.update.viewRelease" = "檢視發布資訊";
+"settings.update.close" = "關閉";
+"settings.update.whatsNew" = "新增內容";
+"settings.update.header" = "發現新版本";
+"settings.update.versionAvailable" = "版本 %@ 已可用"; 
