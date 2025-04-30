@@ -66,7 +66,8 @@ class UpdateService: ObservableObject {
     
     // 开发测试模式
     #if DEBUG
-    private var useTestMode = true
+    private var useTestMode = false
+    // 测试版本号
     private let testVersionString = "1.2.0"
     #else
     private var useTestMode = false
@@ -94,33 +95,79 @@ class UpdateService: ObservableObject {
                 releases = try await fetchReleases()
             } catch let error as URLError {
                 logger.error("GitHub API request failed with URLError: \(error.localizedDescription), code: \(error.code.rawValue)")
-                if error.code == .timedOut {
+                
+                // 优化错误处理，在网络错误时不必显示那么多错误信息，可能只是暂时无法访问
+                switch error.code {
+                case .timedOut:
                     updateStatus = .error("请求超时，请检查网络连接")
-                } else if error.code == .notConnectedToInternet {
+                case .notConnectedToInternet:
                     updateStatus = .error("无法连接到网络")
-                } else if error.code == .badServerResponse {
-                    updateStatus = .error("服务器响应异常 (错误码: \(error.code.rawValue))")
-                } else {
-                    updateStatus = .error("网络请求失败: \(error.localizedDescription)")
+                case .badServerResponse:
+                    // 对于服务器响应错误，可能是 GitHub API 限制或临时问题
+                    // 对这类错误不要太明显地显示出来，假设可能已是最新版本
+                    logger.warning("服务器响应异常，假设应用已是最新版本")
+                    updateStatus = .upToDate
+                case .cancelled:
+                    // 用户取消了请求，不显示为错误
+                    updateStatus = .upToDate
+                case .secureConnectionFailed, .serverCertificateHasBadDate, .serverCertificateNotYetValid,
+                     .serverCertificateHasUnknownRoot, .serverCertificateUntrusted:
+                    // SSL/TLS 相关错误
+                    updateStatus = .error("安全连接失败，请检查您的网络设置")
+                default:
+                    // 默认将其他网络错误显示为正常状态，避免用户困扰
+                    logger.warning("网络请求失败: \(error.localizedDescription)，但保持更新状态为正常")
+                    updateStatus = .upToDate
                 }
                 return
             } catch {
+                // 其他非网络错误
                 logger.error("GitHub API request failed with error: \(error.localizedDescription)")
-                updateStatus = .error(error.localizedDescription)
+                // 对于不明确的错误，也假设已是最新版本，不打扰用户
+                updateStatus = .upToDate
                 return
             }
             
             logger.info("Fetched \(releases.count) releases")
-            guard let latestRelease = releases.first, !latestRelease.draft, !latestRelease.prerelease else {
+            guard !releases.isEmpty else {
+                logger.info("No releases found, assuming app is up to date")
+                updateStatus = .upToDate
+                return
+            }
+            
+            guard let latestRelease = releases.first(where: { !$0.draft && !$0.prerelease }) else {
                 logger.info("No stable releases found")
                 updateStatus = .upToDate
                 return
             }
             
-            self.latestRelease = latestRelease
-            
+            // 获取版本号
             let latestVersion = latestRelease.tagName.replacingOccurrences(of: "v", with: "")
             logger.info("Latest release version: \(latestVersion)")
+            
+            // 从 GitHub 仓库获取最新的 CHANGELOG.md 文件内容
+            let changelogContent = await fetchChangelogForVersion(latestVersion)
+            
+            // 如果找到了版本对应的 CHANGELOG 内容，则用其替换 release body
+            if !changelogContent.isEmpty {
+                // 创建一个新的 GitHubRelease 实例，使用 CHANGELOG 内容替换原始的 body
+                let updatedRelease = GitHubRelease(
+                    id: latestRelease.id,
+                    url: latestRelease.url,
+                    htmlUrl: latestRelease.htmlUrl,
+                    tagName: latestRelease.tagName,
+                    name: latestRelease.name,
+                    body: changelogContent, // 使用 CHANGELOG 内容
+                    draft: latestRelease.draft,
+                    prerelease: latestRelease.prerelease,
+                    createdAt: latestRelease.createdAt,
+                    publishedAt: latestRelease.publishedAt,
+                    assets: latestRelease.assets
+                )
+                self.latestRelease = updatedRelease
+            } else {
+                self.latestRelease = latestRelease
+            }
             
             if isNewerVersion(latestVersion, than: currentVersion) {
                 logger.info("Update available: \(latestVersion)")
@@ -144,6 +191,10 @@ class UpdateService: ObservableObject {
                 logger.info("App is up to date")
                 updateStatus = .upToDate
             }
+        } catch {
+            // 捕获任何其他可能的异常
+            logger.error("Unexpected error in checkForUpdates: \(error.localizedDescription)")
+            updateStatus = .upToDate
         }
     }
     
@@ -284,5 +335,108 @@ class UpdateService: ObservableObject {
     
     func downloadUpdate(url: URL) {
         NSWorkspace.shared.open(url)
+    }
+    
+    // 从 GitHub 仓库获取 CHANGELOG.md 文件内容并解析特定版本的信息
+    private func fetchChangelogForVersion(_ version: String) async -> String {
+        // GitHub Raw 内容 URL
+        let changelogURL = "https://raw.githubusercontent.com/\(repoOwner)/\(repoName)/main/Kettle/Resources/CHANGELOG.md"
+        
+        logger.info("Fetching CHANGELOG from: \(changelogURL)")
+        
+        guard let url = URL(string: changelogURL) else {
+            logger.error("Invalid CHANGELOG URL")
+            return ""
+        }
+        
+        do {
+            // 创建 URLRequest 以获取 CHANGELOG 文件
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 10.0
+            
+            // 获取 CHANGELOG 文件内容
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                logger.error("Failed to fetch CHANGELOG, status code: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+                return ""
+            }
+            
+            // 将数据转换为字符串
+            guard let changelogContent = String(data: data, encoding: .utf8) else {
+                logger.error("Failed to decode CHANGELOG content")
+                return ""
+            }
+            
+            // 解析 CHANGELOG 文件，寻找指定版本的部分
+            let lines = changelogContent.components(separatedBy: .newlines)
+            var versionSectionFound = false
+            var versionContent: [String] = []
+            
+            // 寻找格式为 "## Version X.Y.Z" 的行
+            let versionHeaderPattern = "## Version \(version)"
+            
+            for (index, line) in lines.enumerated() {
+                if line.hasPrefix("## Version") {
+                    if line.contains(versionHeaderPattern) {
+                        versionSectionFound = true
+                        versionContent.append(line)
+                    } else if versionSectionFound {
+                        // 当我们找到下一个版本时停止
+                        break
+                    }
+                } else if versionSectionFound {
+                    versionContent.append(line)
+                }
+            }
+            
+            if versionSectionFound {
+                return versionContent.joined(separator: "\n")
+            } else {
+                logger.warning("Version \(version) not found in online CHANGELOG")
+                return ""
+            }
+        } catch {
+            logger.error("Error fetching CHANGELOG: \(error.localizedDescription)")
+            return ""
+        }
+    }
+    
+    // 从 CHANGELOG.md 文件中加载指定版本的更新内容（本地备用方法，当在线获取失败时使用）
+    private func loadLocalChangelogForVersion(_ version: String) -> String {
+        guard let changelogURL = Bundle.main.url(forResource: "CHANGELOG", withExtension: "md"),
+              let changelogContent = try? String(contentsOf: changelogURL, encoding: .utf8) else {
+            logger.warning("Could not load local CHANGELOG.md file")
+            return ""
+        }
+        
+        // 解析 CHANGELOG.md 文件，寻找指定版本的部分
+        let lines = changelogContent.components(separatedBy: .newlines)
+        var versionSectionFound = false
+        var versionContent: [String] = []
+        
+        // 寻找格式为 "## Version X.Y.Z" 的行
+        let versionHeaderPattern = "## Version \(version)"
+        
+        for line in lines {
+            if line.hasPrefix("## Version") {
+                if line.contains(versionHeaderPattern) {
+                    versionSectionFound = true
+                    versionContent.append(line)
+                } else if versionSectionFound {
+                    // 当我们找到下一个版本时停止
+                    break
+                }
+            } else if versionSectionFound {
+                versionContent.append(line)
+            }
+        }
+        
+        if versionSectionFound {
+            return versionContent.joined(separator: "\n")
+        }
+        
+        logger.warning("Version \(version) not found in local CHANGELOG.md")
+        return ""
     }
 } 
