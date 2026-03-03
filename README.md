@@ -23,7 +23,20 @@ A native macOS GUI for Homebrew — manage packages, casks, taps, and services w
 
 ## Installation
 
-### Download
+### Homebrew (Recommended)
+
+```bash
+brew tap Geoion/tap
+brew install --cask kettle
+```
+
+If macOS Gatekeeper blocks the app on first launch, run:
+
+```bash
+xattr -cr /Applications/Kettle.app
+```
+
+### Direct Download
 
 Download the latest DMG from the [Releases](https://github.com/Geoion/Kettle/releases) page, open it, and drag Kettle to your Applications folder.
 
@@ -46,6 +59,15 @@ open Kettle.xcodeproj
 5. Use the toolbar buttons to refresh or add items
 
 ## Changelog
+
+### v1.1.0
+
+- **Packages**: full metadata (version, description, homepage, license, tap, install date, disk size), outdated badge with version comparison, one-click Upgrade All, filter by outdated
+- **Casks**: full metadata, app icons in list rows, outdated badge, fixed Open button path
+- **Services**: search bar, Restart button, PID display, config arrays fully expanded, XML view without height limit
+- **Settings**: full backup export, individual package/cask/tap exports, new Cleanup tab (`brew cleanup` + `brew autoremove`)
+- **Homebrew install**: now available via `brew install --cask kettle`
+- Bug fixes: casks not loading, last-updated time not showing, `Settings` naming conflict
 
 ### v1.0.8
 
