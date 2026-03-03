@@ -1,146 +1,164 @@
-// Common
+/* Common */
 "OK" = "确定";
 "Cancel" = "取消";
 "Error" = "错误";
 "Confirm" = "确认";
 "Warning" = "警告";
-"common.lastUpdated" = "最后更新";
-"common.unknown" = "未知";
-"common.items" = "项";
+"Refresh" = "刷新";
+"Add" = "添加";
+"Open" = "打开";
+"Remove" = "移除";
+"Update" = "更新";
+"Uninstall" = "卸载";
+"Stop" = "停止";
+"Close" = "关闭";
+"Clear" = "清除";
+"Loading..." = "加载中...";
+"Search..." = "搜索...";
+"Installed" = "已安装";
+"Running" = "运行中";
+"Stopped" = "已停止";
+"Unknown" = "未知";
+"Follow System" = "跟随系统";
+"Light" = "浅色";
+"Dark" = "深色";
 
-// Main Menu
+/* Last Updated */
+"last.updated" = "更新于 %@";
+"last.updated.never" = "从未更新";
+"last.updated.just.now" = "刚刚";
+
+/* Main Menu */
 "menu.taps" = "软件源";
 "menu.packages" = "软件包";
 "menu.casks" = "应用";
 "menu.services" = "服务";
 "menu.settings" = "设置";
-"menu.taps.noSelection" = "请选择一个软件源";
-"menu.packages.noSelection" = "请选择一个软件包";
-"menu.casks.noSelection" = "请选择一个应用";
-"menu.services.noSelection" = "请选择一个服务";
-"menu.settings.noSelection" = "请选择一个设置项";
 
-// Settings Sections
-"settings.preferences" = "偏好设置";
-"settings.about" = "关于";
-"settings.export" = "导出";
-"settings.status" = "状态";
-"settings.preferences.desc" = "配置您的首选应用程序和外观";
+/* Taps */
+"taps" = "个软件源";
+"No Taps" = "没有软件源";
+"No Homebrew taps are installed." = "未安装任何 Homebrew 软件源。";
+"No Results" = "无结果";
+"No taps match your search." = "没有匹配的软件源。";
+"Search Tap" = "搜索软件源";
+"Add Tap" = "添加软件源";
+"Name (user/repo)" = "名称（user/repo）";
+"URL (Optional)" = "URL（可选）";
+"Command" = "命令";
+"Log" = "日志";
+"Loading tap info..." = "正在加载软件源信息...";
+"Remove Tap" = "移除软件源";
+"Are you sure you want to remove '%@'?" = "确定要移除 '%@' 吗？";
+"Open in Finder" = "在访达中打开";
+"Repository" = "仓库";
+"Branch" = "分支";
+"Path" = "路径";
+"Size" = "大小";
+"Formulae" = "Formula 数量";
+"Last Commit" = "最近提交";
 
-// System Info
-"settings.systemInfo" = "系统信息";
-"settings.systemInfoDesc" = "查看系统和 Homebrew 安装详情";
-"settings.cpuModel" = "CPU 型号";
-"settings.homebrewStatus" = "Homebrew 状态";
-"settings.homebrewVersion" = "Homebrew 版本";
-"settings.homebrewCore" = "Homebrew Core";
-"settings.homebrewCask" = "Homebrew Cask";
-"settings.installed" = "已安装";
-"settings.notInstalled" = "未安装";
-"settings.installPath" = "安装路径";
-"settings.status" = "状态";
-"status.notApplicable" = "-";
+/* Packages */
+"packages" = "个软件包";
+"No Packages" = "没有软件包";
+"No Homebrew packages are installed." = "未安装任何 Homebrew 软件包。";
+"No packages match your search." = "没有匹配的软件包。";
+"Search packages..." = "搜索软件包...";
+"Uninstall Package" = "卸载软件包";
+"Are you sure you want to uninstall '%@'?" = "确定要卸载 '%@' 吗？";
+"Version" = "版本";
+"Description" = "描述";
+"Dependencies" = "依赖";
 
-// Export Settings
-"settings.tapList" = "软件源列表";
-"settings.exportDesc" = "将您的软件源列表导出为 JSON 文件";
-"settings.exportTaps" = "导出软件源";
-"settings.exportNote" = "导出的文件将包含所有软件源及其信息。";
-
-// Doctor Settings (New Section)
-"settings.doctor" = "诊断";
-"doctor.prompt" = "点击上方按钮运行 brew doctor。";
-"doctor.running" = "正在运行 brew doctor...";
-"doctor.success" = "您的系统已准备就绪。";
-"doctor.errorPrefix" = "运行 brew doctor 失败：";
-"doctor.runButton" = "运行诊断";
-
-// Services
-"Services" = "服务";
-"Please select a service" = "请选择一个服务";
-"Status" = "状态";
+/* Casks */
+"casks" = "个应用";
+"No Casks" = "没有应用";
+"No Homebrew casks are installed." = "未安装任何 Homebrew 应用。";
+"No casks match your search." = "没有匹配的应用。";
+"Search casks..." = "搜索应用...";
+"Uninstall Cask" = "卸载应用";
 "Name" = "名称";
+
+/* Services */
+"services" = "个服务";
+"No Services" = "没有服务";
+"No Homebrew services are available." = "没有可用的 Homebrew 服务。";
+"Service Info" = "服务信息";
+"Configuration" = "配置";
+"Summary" = "摘要";
+"XML" = "XML";
+"Loading configuration..." = "正在加载配置...";
+"Configuration file not readable." = "配置文件无法读取。";
+"No XML content available" = "没有 XML 内容";
+"Status" = "状态";
 "User" = "用户";
 "File Path" = "文件路径";
-"Service Configuration" = "服务配置";
 "Start Service" = "启动服务";
 "Stop Service" = "停止服务";
 "Are you sure you want to start %@?" = "确定要启动 %@ 吗？";
 "Are you sure you want to stop %@?" = "确定要停止 %@ 吗？";
 
-// Taps
-"Taps" = "软件源";
-"Please select a tap" = "请选择一个软件源";
-"Search Tap" = "搜索软件源";
-"No taps available" = "没有可用的软件源";
-"No results found" = "未找到结果";
+/* Settings Tabs */
+"Preferences" = "偏好设置";
+"Export" = "导出";
+"Doctor" = "诊断";
+"About" = "关于";
+
+/* Status Tab */
+"System" = "系统";
+"CPU Model" = "CPU 型号";
+"Homebrew" = "Homebrew";
+"Installation Path" = "安装路径";
+"Repositories" = "仓库";
+
+/* Preferences Tab */
+"Interface" = "界面";
+"Language" = "语言";
+"Appearance" = "外观";
+"Language changes will take effect after restarting the app." = "语言更改将在重启应用后生效。";
+"Applications" = "应用程序";
+"Default Finder" = "默认访达";
+"Default Editor" = "默认编辑器";
+"These settings will be used when opening files and folders." = "这些设置将用于打开文件和文件夹。";
+
+/* Export Tab */
+"Tap List" = "软件源列表";
+"Export all installed taps and their metadata as JSON." = "将所有已安装的软件源及其元数据导出为 JSON。";
+"Homebrew Taps" = "Homebrew 软件源";
+"Export Taps" = "导出软件源";
+"Export taps panel title" = "导出软件源";
 "Last updated: %@" = "最后更新：%@";
-"Unknown" = "未知";
-"Open in Finder" = "在访达中打开";
-"Visit Repository" = "访问仓库";
-"Remove Tap" = "移除软件源";
-"Install Tap" = "安装软件源";
-"Are you sure you want to remove '%@'?" = "确定要移除 '%@' 吗？";
 
-// Packages
-"Packages" = "软件包";
-"Please select a package" = "请选择一个软件包";
-"Package Information" = "软件包信息";
-"Version" = "版本";
-"Description" = "描述";
+/* Doctor Tab */
+"Run Diagnostics" = "运行诊断";
+"Running brew doctor...\n" = "正在运行 brew doctor...\n";
+"Click \"Run Diagnostics\" to check your Homebrew installation." = "点击「运行诊断」检查 Homebrew 安装状态。";
+"Your system is ready to brew." = "您的系统已准备就绪。";
 
-/* Services */
-"services.name" = "名称";
-"services.status" = "状态";
-"services.user" = "用户";
-"services.filePath" = "文件路径";
-"services.configuration" = "服务配置";
-"services.startService" = "启动服务";
-"services.stopService" = "停止服务";
-"services.confirmStart" = "确定要启动 %@ 吗？";
-"services.confirmStop" = "确定要停止 %@ 吗？";
+/* About Tab */
+"Developer" = "开发者";
+"Contact" = "联系方式";
+"Information" = "信息";
+"Actions" = "操作";
+"View Source Code" = "查看源代码";
+"View Changelog" = "查看更新日志";
+"Check for Updates" = "检查更新";
+"Version %@ is available." = "版本 %@ 可用。";
+"You're up to date." = "已是最新版本。";
+"Checking for updates..." = "正在检查更新...";
 
-/* Backup View */
-"backup.title" = "备份";
-"backup.backup" = "备份配置";
-"backup.restore" = "恢复配置";
-"backup.error" = "错误";
-"backup.backupInProgress" = "正在备份...";
-"backup.restoreInProgress" = "正在恢复...";
-"backup.backupSuccess" = "备份成功完成";
-"backup.restoreSuccess" = "恢复成功完成";
-"backup.backupFailed" = "备份配置失败：%@";
-"backup.restoreFailed" = "恢复配置失败：%@";
+/* Update Dialog */
+"Update Available" = "发现新版本";
+"Version %@ is now available." = "版本 %@ 现已可用。";
+"What's New" = "新增内容";
+"Later" = "稍后";
+"View Release" = "查看发布信息";
+"Download" = "下载";
 
-// About View Specific
-"Version" = "版本";
-"Build" = "构建";
-"settings.about.informationHeader" = "信息";
-"settings.about.developer" = "开发者";
-"settings.about.contact" = "联系方式";
-"settings.about.repository" = "代码仓库";
-"settings.about.openSource" = "Kettle 是一个开源项目。";
-"settings.about.actionsHeader" = "操作";
-"settings.about.viewSourceCode" = "在 GitHub 上查看源代码";
-"settings.about.checkUpdates" = "检查更新";
-"settings.about.viewChangelog" = "查看更新日志";
-"settings.about.madeBy" = "由 Geoion ❤️ 制作";
+/* Changelog */
+"Changelog" = "更新日志";
 
-// Changelog View
-"changelog.title" = "更新日志";
-"common.close" = "关闭";
-
-// Packages List
-"packages.searchPlaceholder" = "搜索软件包";
-"packages.noneAvailable" = "未安装软件包或缓存为空。";
-"packages.noResults" = "未找到匹配的软件包。";
-
-// Casks List
-"casks.searchPlaceholder" = "搜索应用";
-"casks.noneAvailable" = "未安装应用或缓存为空。";
-"casks.noResults" = "未找到匹配的应用。";
-
-/* Update Feature */
+/* Update Service */
 "settings.update.available" = "版本 %@ 可更新";
 "settings.update.notAvailable" = "您的应用已是最新版本";
 "settings.update.error" = "检查更新出错";
@@ -150,4 +168,4 @@
 "settings.update.close" = "关闭";
 "settings.update.whatsNew" = "新增内容";
 "settings.update.header" = "发现新版本";
-"settings.update.versionAvailable" = "版本 %@ 已可用"; 
+"settings.update.versionAvailable" = "版本 %@ 已可用";
