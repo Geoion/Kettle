@@ -1,133 +1,75 @@
 # Kettle
 
-<div align="center">
-  <!-- <img src="Kettle/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" height="128" alt="Kettle Logo"> -->
-  <h3>A Modern Homebrew GUI Manager for macOS</h3>
-  <p>
-    <a href="https://github.com/Geoion/Kettle/releases/latest">
-      <img src="https://img.shields.io/github/v/release/Geoion/Kettle" alt="Latest Release">
-    </a>
-    <a href="https://github.com/Geoion/Kettle/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/Geoion/Kettle" alt="License">
-    </a>
-    <a href="https://github.com/Geoion/Kettle/stargazers">
-      <img src="https://img.shields.io/github/stars/Geoion/Kettle" alt="Stars">
-    </a>
-  </p>
-</div>
+A native macOS GUI for Homebrew — manage packages, casks, taps, and services without touching the terminal.
+
+![macOS 15.4+](https://img.shields.io/badge/macOS-15.4%2B-blue) ![Swift](https://img.shields.io/badge/Swift-5.9-orange) [![GitHub release](https://img.shields.io/github/v/release/Geoion/Kettle)](https://github.com/Geoion/Kettle/releases/latest) [![License](https://img.shields.io/github/license/Geoion/Kettle)](LICENSE)
 
 ## Features
 
-🚀 **Modern Interface**
-- Native macOS app built with SwiftUI
-- Clean and intuitive user interface
-- Dark mode support
+- Browse and manage installed Homebrew **Packages** (formulae) — view version, description, dependencies; update or uninstall with one click
+- Browse and manage installed **Casks** — view details and uninstall
+- Manage **Taps** — view repository, branch, HEAD commit, file count and size; add or remove taps
+- Manage **Services** — start and stop services, view configuration files in form or raw XML view
+- **Settings** — system status (CPU, Homebrew version, install path), preferences (language, appearance, default apps), tap export, `brew doctor` diagnostics, and auto-update
+- Automatic cache for taps, packages, casks, and services — fast startup without waiting for Homebrew
+- Auto-update: checks GitHub Releases on launch, shows changelog, one-click download
+- 5 languages: English, Simplified Chinese, Traditional Chinese, Japanese, Korean
+- Light / Dark / System appearance
 
-🎯 **Core Functionality**
-- Manage Homebrew packages, casks, and taps
-- Start/stop services
-- View detailed package information
-- Easy installation and removal
-- Real-time status monitoring
+## Requirements
 
-⚡️ **Performance**
-- Fast and responsive
-- Efficient caching system
-- Minimal resource usage
-
-🔒 **Security & Privacy**
-- Optional analytics (disabled by default)
-- Open source and transparent
-- Secure credential handling
-- No collection of sensitive data
-- Full user control over data sharing
-- See our [Privacy Policy](PRIVACY.md) for details
-
-## Screenshots
-
-[Screenshots will be added here]
+- macOS 15.4 or later
+- [Homebrew](https://brew.sh/) installed
 
 ## Installation
 
-### Requirements
-- macOS 12.0 or later
-- Homebrew installed on your system
-
 ### Download
-1. Download the latest version from the [Releases](https://github.com/Geoion/Kettle/releases) page
-2. Open the DMG file
-3. Drag Kettle to your Applications folder
+
+Download the latest DMG from the [Releases](https://github.com/Geoion/Kettle/releases) page, open it, and drag Kettle to your Applications folder.
 
 ### Build from Source
+
+Requires Xcode 15+.
+
 ```bash
-# Clone the repository
 git clone https://github.com/Geoion/Kettle.git
-
-# Navigate to the project directory
 cd Kettle
-
-# Open in Xcode
 open Kettle.xcodeproj
-
-# Build and run the project
 ```
 
 ## Usage
 
-### First Launch
-1. Launch Kettle from your Applications folder
-2. If Homebrew is not installed, Kettle will offer to install it for you
-3. Grant necessary permissions when prompted
+1. Launch **Kettle** from your Applications folder
+2. If Homebrew is not installed, Kettle will offer to install it
+3. Select a section from the sidebar — Taps, Packages, Casks, or Services
+4. Click any row to expand and view details or perform actions
+5. Use the toolbar buttons to refresh or add items
 
-### Basic Operations
-- **Packages**: View, install, update, and remove Homebrew packages
-- **Services**: Manage Homebrew services (start, stop, restart)
-- **Taps**: Add or remove Homebrew taps
-- **Casks**: Manage macOS applications installed via Homebrew
+## Changelog
 
-## Contributing
+### v1.0.8
 
-We welcome contributions! Here's how you can help:
+- Enhanced DMG creation and build process
+- Improved versioning in Info.plist with fallback mechanisms
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### v1.0.4
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for details.
+- **Auto-update**: automatic version checks, update notifications, one-click DMG download
 
-## Development
+### v1.0.3
 
-### Prerequisites
-- Xcode 14.0 or later
-- macOS 12.0 or later
-- Homebrew
+- Enhanced service detail panel with XML view and segmented control for form/XML switching
 
-### Project Structure
-```
-Kettle/
-├── Services/         # Core services and managers
-├── Models/          # Data models
-├── Views/           # SwiftUI views
-├── Extensions/      # Swift extensions
-└── Resources/       # Assets and resources
-```
+### v1.0.1
+
+- Enhanced tap addition dialog with real-time command preview, log display, and cancel support
+- Improved input validation for tap names
+
+### v1.0.0
+
+- Initial release: package, cask, tap, and service management
+- Multi-language support (5 languages), light/dark theme, `brew doctor` diagnostics, tap export
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [Homebrew](https://brew.sh/) - The missing package manager for macOS
-- The SwiftUI community for inspiration and support
-- All our contributors and users
-
-## Support
-
-If you encounter any issues or have questions:
-- Open an [issue](https://github.com/Geoion/Kettle/issues)
-- Check our [Discussions](https://github.com/Geoion/Kettle/discussions) page
-- Read the [Wiki](https://github.com/Geoion/Kettle/wiki)
-
+MIT
