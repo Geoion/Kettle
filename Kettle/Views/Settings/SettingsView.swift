@@ -10,20 +10,18 @@ struct SettingsView: View {
         TabView {
             StatusTabView()
                 .tabItem { Label(L("Status"), systemImage: "info.circle") }
-
             PreferencesTabView()
                 .tabItem { Label(L("Preferences"), systemImage: "gear") }
-
             ExportTabView()
                 .tabItem { Label(L("Export"), systemImage: "square.and.arrow.up") }
-
+            CleanupTabView()
+                .tabItem { Label(L("Cleanup"), systemImage: "trash.circle") }
             DoctorTabView()
                 .tabItem { Label(L("Doctor"), systemImage: "stethoscope") }
-
             AboutTabView()
                 .tabItem { Label(L("About"), systemImage: "questionmark.circle") }
         }
-        .frame(minWidth: 500, minHeight: 400)
+        .frame(minWidth: 520, minHeight: 420)
     }
 }
 
@@ -40,16 +38,11 @@ struct StatusTabView: View {
         Form {
             Section {
                 HStack {
-                    Text(L("CPU Model"))
-                    Spacer()
-                    Text(cpuInfo)
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
+                    Text(L("CPU Model")); Spacer()
+                    Text(cpuInfo).foregroundStyle(.secondary).textSelection(.enabled)
                 }
-
                 HStack {
-                    Text(L("Homebrew"))
-                    Spacer()
+                    Text(L("Homebrew")); Spacer()
                     HStack(spacing: 4) {
                         Image(systemName: homebrewManager.isHomebrewInstalled ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundStyle(homebrewManager.isHomebrewInstalled ? .green : .red)
@@ -57,47 +50,60 @@ struct StatusTabView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-
                 if homebrewManager.isHomebrewInstalled {
                     HStack {
-                        Text(L("Version"))
-                        Spacer()
-                        Text(homebrewVersion)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
+                        Text(L("Version")); Spacer()
+                        Text(homebrewVersion).foregroundStyle(.secondary).textSelection(.enabled)
                     }
                     HStack {
-                        Text(L("Installation Path"))
-                        Spacer()
+                        Text(L("Installation Path")); Spacer()
                         Text(homebrewManager.getInstallationPath())
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
+                            .foregroundStyle(.secondary).textSelection(.enabled)
                             .font(.system(.body, design: .monospaced))
                     }
                 }
-            } header: {
-                Text(L("System"))
-            }
+            } header: { Text(L("System")) }
 
             if homebrewManager.isHomebrewInstalled {
                 Section {
                     HStack {
-                        Text("homebrew-core")
-                        Spacer()
-                        Text(coreInfo)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
+                        Text("homebrew-core"); Spacer()
+                        Text(coreInfo).foregroundStyle(.secondary).textSelection(.enabled)
                     }
                     HStack {
-                        Text("homebrew-cask")
-                        Spacer()
-                        Text(caskInfo)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
+                        Text("homebrew-cask"); Spacer()
+                        Text(caskInfo).foregroundStyle(.secondary).textSelection(.enabled)
                     }
-                } header: {
-                    Text(L("Repositories"))
-                }
+                } header: { Text(L("Repositories")) }
+
+                Section {
+                    HStack {
+                        Text(L("Packages")); Spacer()
+                        Text("\(homebrewManager.packages.count)").foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text(L("Casks")); Spacer()
+                        Text("\(homebrewManager.casks.count)").foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text(L("Taps")); Spacer()
+                        Text("\(homebrewManager.taps.count)").foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text(L("Services")); Spacer()
+                        Text("\(homebrewManager.services.count)").foregroundStyle(.secondary)
+                    }
+                    let outdated = homebrewManager.packages.filter { $0.outdated }.count
+                        + homebrewManager.casks.filter { $0.outdated }.count
+                    if outdated > 0 {
+                        HStack {
+                            Label(L("Outdated"), systemImage: "arrow.up.circle.fill")
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            Text("\(outdated)").foregroundStyle(.orange).fontWeight(.medium)
+                        }
+                    }
+                } header: { Text(L("Installed")) }
             }
         }
         .formStyle(.grouped)
@@ -106,15 +112,13 @@ struct StatusTabView: View {
 
     private func loadSystemInfo() {
         Task {
-            let process = Process()
-            let pipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: "/usr/sbin/sysctl")
-            process.arguments = ["-n", "machdep.cpu.brand_string"]
-            process.standardOutput = pipe
-            try? process.run()
-            process.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let cpu = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "-"
+            let p = Process(); let pipe = Pipe()
+            p.executableURL = URL(fileURLWithPath: "/usr/sbin/sysctl")
+            p.arguments = ["-n", "machdep.cpu.brand_string"]
+            p.standardOutput = pipe
+            try? p.run(); p.waitUntilExit()
+            let cpu = String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? "-"
             await MainActor.run { cpuInfo = cpu.isEmpty ? "-" : cpu }
 
             guard homebrewManager.isHomebrewInstalled else { return }
@@ -130,25 +134,19 @@ struct StatusTabView: View {
                     caskInfo = parseRevision(cask) ?? "-"
                 }
             } catch {
-                await MainActor.run {
-                    homebrewVersion = "-"
-                    coreInfo = "-"
-                    caskInfo = "-"
-                }
+                await MainActor.run { homebrewVersion = "-"; coreInfo = "-"; caskInfo = "-" }
             }
         }
     }
 
     private func parseRevision(_ line: String?) -> String? {
-        guard let line else { return nil }
-        guard let revStart = line.range(of: "(git revision ")?.upperBound,
+        guard let line,
+              let revStart = line.range(of: "(git revision ")?.upperBound,
               let revEnd = line.range(of: ";")?.lowerBound,
               let commitStart = line.range(of: "; last commit ")?.upperBound,
               let commitEnd = line.range(of: ")")?.lowerBound,
               revStart < revEnd, commitStart < commitEnd else { return nil }
-        let rev = String(line[revStart..<revEnd])
-        let date = String(line[commitStart..<commitEnd])
-        return "\(rev) / \(date)"
+        return "\(String(line[revStart..<revEnd])) / \(String(line[commitStart..<commitEnd]))"
     }
 }
 
@@ -156,7 +154,6 @@ struct StatusTabView: View {
 
 struct PreferencesTabView: View {
     @EnvironmentObject var settings: AppSettings
-
     let finderOptions = ["Finder", "Path Finder"]
     let editorOptions = ["TextEdit", "Visual Studio Code", "Sublime Text", "BBEdit"]
 
@@ -164,22 +161,16 @@ struct PreferencesTabView: View {
         Form {
             Section {
                 Picker(L("Language"), selection: $settings.language) {
-                    ForEach(AppLanguage.allCases, id: \.self) { lang in
-                        Text(lang.displayName).tag(lang)
-                    }
+                    ForEach(AppLanguage.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
                 Picker(L("Appearance"), selection: $settings.appearance) {
-                    ForEach(AppAppearance.allCases, id: \.self) { mode in
-                        Text(mode.displayName).tag(mode)
-                    }
+                    ForEach(AppAppearance.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
                 .pickerStyle(.segmented)
-            } header: {
-                Text(L("Interface"))
-            } footer: {
+            } header: { Text(L("Interface")) }
+            footer: {
                 Text(L("Language changes will take effect after restarting the app."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Section {
@@ -189,12 +180,10 @@ struct PreferencesTabView: View {
                 Picker(L("Default Editor"), selection: $settings.preferredEditor) {
                     ForEach(editorOptions, id: \.self) { Text($0).tag($0) }
                 }
-            } header: {
-                Text(L("Applications"))
-            } footer: {
+            } header: { Text(L("Applications")) }
+            footer: {
                 Text(L("These settings will be used when opening files and folders."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -205,97 +194,350 @@ struct PreferencesTabView: View {
 
 struct ExportTabView: View {
     @EnvironmentObject var homebrewManager: HomebrewManager
-    @AppStorage("cachedTapsUpdate") private var lastUpdate: Date?
+    @AppStorage("cachedTapsUpdate") private var lastTapsUpdate: Date?
     @State private var isExporting = false
     @State private var showingError = false
     @State private var errorMessage = ""
 
-    struct ExportData: Codable {
-        let taps: [HomebrewTap]
-        let tapInfos: [String: TapInfo]
-        let exportDate: Date
-        let lastUpdateDate: Date?
-    }
-
     var body: some View {
         Form {
             Section {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(L("Tap List"))
-                            .font(.headline)
-                        Text(L("Export all installed taps and their metadata as JSON."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button {
-                        exportTaps()
-                    } label: {
-                        if isExporting {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Label(L("Export"), systemImage: "square.and.arrow.up")
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isExporting)
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text(L("Homebrew Taps"))
-            } footer: {
-                if let update = lastUpdate {
-                    Text(String(format: L("Last updated: %@"), update.formatted()))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+                exportRow(
+                    title: L("Full Backup"),
+                    description: L("Export packages, casks, taps, and services as JSON."),
+                    icon: "externaldrive",
+                    action: { exportFull() }
+                )
+            } header: { Text(L("Backup")) }
+
+            Section {
+                exportRow(
+                    title: L("Tap List"),
+                    description: L("Export all installed taps and their metadata as JSON."),
+                    icon: "archivebox",
+                    action: { exportTaps() }
+                )
+                exportRow(
+                    title: L("Package List"),
+                    description: L("Export all installed formula packages as JSON."),
+                    icon: "shippingbox",
+                    action: { exportPackages() }
+                )
+                exportRow(
+                    title: L("Cask List"),
+                    description: L("Export all installed casks as JSON."),
+                    icon: "app.badge",
+                    action: { exportCasks() }
+                )
+            } header: { Text(L("Individual Export")) }
         }
         .formStyle(.grouped)
         .alert(L("Error"), isPresented: $showingError) {
             Button(L("OK"), role: .cancel) {}
-        } message: {
-            Text(errorMessage)
+        } message: { Text(errorMessage) }
+    }
+
+    @ViewBuilder
+    private func exportRow(title: String, description: String, icon: String, action: @escaping () -> Void) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(description).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                action()
+            } label: {
+                if isExporting {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Label(L("Export"), systemImage: icon)
+                }
+            }
+            .buttonStyle(.bordered)
+            .disabled(isExporting)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func exportFull() {
+        isExporting = true
+        Task {
+            do {
+                let data = try await homebrewManager.backupConfiguration()
+                saveFile(data: data, filename: "kettle-backup-\(dateStamp()).json")
+            } catch {
+                errorMessage = error.localizedDescription; showingError = true
+            }
+            isExporting = false
         }
     }
 
     private func exportTaps() {
         isExporting = true
-        let panel = NSSavePanel()
-        panel.title = L("Export taps panel title")
-        panel.nameFieldStringValue = "homebrew-taps-\(DateFormatter.exportFormat.string(from: Date())).json"
-        panel.allowedContentTypes = [.json]
-        panel.canCreateDirectories = true
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                do {
-                    let data = ExportData(
-                        taps: homebrewManager.taps,
-                        tapInfos: homebrewManager.tapInfos,
-                        exportDate: Date(),
-                        lastUpdateDate: lastUpdate
-                    )
-                    let encoder = JSONEncoder()
-                    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                    encoder.dateEncodingStrategy = .iso8601
-                    try encoder.encode(data).write(to: url)
-                } catch {
-                    errorMessage = error.localizedDescription
-                    showingError = true
+        Task {
+            do {
+                struct TapsExport: Codable {
+                    let taps: [HomebrewTap]; let tapInfos: [String: TapInfo]; let exportDate: Date
                 }
+                let obj = TapsExport(taps: homebrewManager.taps, tapInfos: homebrewManager.tapInfos, exportDate: Date())
+                let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                encoder.dateEncodingStrategy = .iso8601
+                let data = try encoder.encode(obj)
+                saveFile(data: data, filename: "homebrew-taps-\(dateStamp()).json")
+            } catch {
+                errorMessage = error.localizedDescription; showingError = true
             }
             isExporting = false
         }
     }
+
+    private func exportPackages() {
+        isExporting = true
+        Task {
+            do {
+                let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                encoder.dateEncodingStrategy = .iso8601
+                let data = try encoder.encode(homebrewManager.packages)
+                saveFile(data: data, filename: "homebrew-packages-\(dateStamp()).json")
+            } catch {
+                errorMessage = error.localizedDescription; showingError = true
+            }
+            isExporting = false
+        }
+    }
+
+    private func exportCasks() {
+        isExporting = true
+        Task {
+            do {
+                let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                let data = try encoder.encode(homebrewManager.casks)
+                saveFile(data: data, filename: "homebrew-casks-\(dateStamp()).json")
+            } catch {
+                errorMessage = error.localizedDescription; showingError = true
+            }
+            isExporting = false
+        }
+    }
+
+    private func saveFile(data: Data, filename: String) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = filename
+        panel.allowedContentTypes = [.json]
+        panel.canCreateDirectories = true
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                do { try data.write(to: url) }
+                catch { errorMessage = error.localizedDescription; showingError = true }
+            }
+        }
+    }
+
+    private func dateStamp() -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyyMMdd-HHmmss"; return f.string(from: Date())
+    }
 }
 
-private extension DateFormatter {
-    static let exportFormat: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyyMMdd-HHmmss"
-        return f
-    }()
+// MARK: - Cleanup Tab
+
+struct CleanupTabView: View {
+    @EnvironmentObject var homebrewManager: HomebrewManager
+    @State private var previewItems: [CleanupItem] = []
+    @State private var autoremoveItems: [String] = []
+    @State private var isLoadingPreview = false
+    @State private var isRunningCleanup = false
+    @State private var isRunningAutoremove = false
+    @State private var cleanupOutput = ""
+    @State private var autoremoveOutput = ""
+    @State private var errorMessage: String?
+    @State private var selectedSection: CleanupSection = .cleanup
+
+    enum CleanupSection: String, CaseIterable {
+        case cleanup = "Cleanup"
+        case autoremove = "Autoremove"
+    }
+
+    private var totalCleanupSize: Int64 {
+        previewItems.compactMap { $0.size }.reduce(0, +)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $selectedSection) {
+                ForEach(CleanupSection.allCases, id: \.self) { s in
+                    Text(s == .cleanup ? L("Cleanup") : L("Autoremove")).tag(s)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(12)
+
+            Divider()
+
+            if selectedSection == .cleanup {
+                cleanupSection
+            } else {
+                autoremoveSection
+            }
+        }
+    }
+
+    private var cleanupSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("Remove Old Versions")).font(.headline)
+                    Text(L("Removes outdated downloads and old formula versions."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if !previewItems.isEmpty {
+                    Text(ByteCountFormatter.string(fromByteCount: totalCleanupSize, countStyle: .file))
+                        .font(.caption).foregroundStyle(.orange).fontWeight(.medium)
+                }
+                Button { loadCleanupPreview() } label: {
+                    if isLoadingPreview { ProgressView().controlSize(.small) }
+                    else { Label(L("Preview"), systemImage: "eye") }
+                }
+                .buttonStyle(.bordered).controlSize(.small).disabled(isLoadingPreview || isRunningCleanup)
+
+                Button { runCleanup() } label: {
+                    if isRunningCleanup { ProgressView().controlSize(.small) }
+                    else { Label(L("Run Cleanup"), systemImage: "trash") }
+                }
+                .buttonStyle(.borderedProminent).controlSize(.small)
+                .tint(.orange).disabled(isLoadingPreview || isRunningCleanup)
+            }
+            .padding(12)
+
+            Divider()
+
+            if !cleanupOutput.isEmpty {
+                ScrollView {
+                    Text(cleanupOutput)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled).padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else if previewItems.isEmpty && !isLoadingPreview {
+                VStack(spacing: 8) {
+                    Spacer()
+                    Image(systemName: "checkmark.circle").font(.system(size: 32)).foregroundStyle(.secondary)
+                    Text(L("Click Preview to check for items to clean up."))
+                        .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Spacer()
+                }
+                .padding()
+            } else {
+                List(previewItems) { item in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name).font(.headline)
+                            Text(item.version).font(.caption).foregroundStyle(.secondary)
+                            Text(item.path).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                        }
+                        Spacer()
+                        if let size = item.size {
+                            Text(ByteCountFormatter.string(fromByteCount: size, countStyle: .file))
+                                .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
+
+            if let err = errorMessage {
+                Text(err).font(.caption).foregroundStyle(.red).padding(8)
+            }
+        }
+    }
+
+    private var autoremoveSection: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("Remove Unused Dependencies")).font(.headline)
+                    Text(L("Removes formulae that were installed as dependencies but are no longer needed."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button { loadAutoremovePreview() } label: {
+                    if isLoadingPreview { ProgressView().controlSize(.small) }
+                    else { Label(L("Preview"), systemImage: "eye") }
+                }
+                .buttonStyle(.bordered).controlSize(.small).disabled(isLoadingPreview || isRunningAutoremove)
+
+                Button { runAutoremove() } label: {
+                    if isRunningAutoremove { ProgressView().controlSize(.small) }
+                    else { Label(L("Run Autoremove"), systemImage: "minus.circle") }
+                }
+                .buttonStyle(.borderedProminent).controlSize(.small)
+                .tint(.red).disabled(isLoadingPreview || isRunningAutoremove)
+            }
+            .padding(12)
+
+            Divider()
+
+            if !autoremoveOutput.isEmpty {
+                ScrollView {
+                    Text(autoremoveOutput)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled).padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else if autoremoveItems.isEmpty && !isLoadingPreview {
+                VStack(spacing: 8) {
+                    Spacer()
+                    Image(systemName: "checkmark.circle").font(.system(size: 32)).foregroundStyle(.secondary)
+                    Text(L("Click Preview to check for unused dependencies."))
+                        .foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    Spacer()
+                }
+                .padding()
+            } else {
+                List(autoremoveItems, id: \.self) { item in
+                    Text(item).font(.caption).foregroundStyle(.secondary)
+                }
+                .listStyle(.plain)
+            }
+        }
+    }
+
+    private func loadCleanupPreview() {
+        isLoadingPreview = true; errorMessage = nil
+        Task {
+            do { previewItems = try await homebrewManager.fetchCleanupPreview() }
+            catch { errorMessage = error.localizedDescription }
+            isLoadingPreview = false
+        }
+    }
+
+    private func runCleanup() {
+        isRunningCleanup = true; cleanupOutput = ""; previewItems = []; errorMessage = nil
+        Task {
+            do { cleanupOutput = try await homebrewManager.runCleanup() }
+            catch { errorMessage = error.localizedDescription }
+            isRunningCleanup = false
+        }
+    }
+
+    private func loadAutoremovePreview() {
+        isLoadingPreview = true; errorMessage = nil
+        Task {
+            do { autoremoveItems = try await homebrewManager.fetchAutoremovePreview() }
+            catch { errorMessage = error.localizedDescription }
+            isLoadingPreview = false
+        }
+    }
+
+    private func runAutoremove() {
+        isRunningAutoremove = true; autoremoveOutput = ""; autoremoveItems = []; errorMessage = nil
+        Task {
+            do { autoremoveOutput = try await homebrewManager.runAutoremove() }
+            catch { errorMessage = error.localizedDescription }
+            isRunningAutoremove = false
+        }
+    }
 }
 
 // MARK: - Doctor Tab
@@ -308,27 +550,17 @@ struct DoctorTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Button {
-                    runDoctor()
-                } label: {
-                    if isRunning {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Label(L("Run Diagnostics"), systemImage: "stethoscope")
-                    }
+                Button { runDoctor() } label: {
+                    if isRunning { ProgressView().controlSize(.small) }
+                    else { Label(L("Run Diagnostics"), systemImage: "stethoscope") }
                 }
-                .buttonStyle(.bordered)
-                .disabled(isRunning)
+                .buttonStyle(.bordered).disabled(isRunning)
                 Spacer()
                 if !output.isEmpty {
-                    Button {
-                        output = ""
-                    } label: {
-                        Label(L("Clear"), systemImage: "trash")
-                            .font(.caption)
+                    Button { output = "" } label: {
+                        Label(L("Clear"), systemImage: "trash").font(.caption)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .buttonStyle(.plain).foregroundStyle(.secondary)
                 }
             }
             .padding(12)
@@ -337,20 +569,13 @@ struct DoctorTabView: View {
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(output.isEmpty
-                        ? L("Click \"Run Diagnostics\" to check your Homebrew installation.")
-                        : output
-                    )
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(output.isEmpty ? .secondary : .primary)
-                    .textSelection(.enabled)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .id("bottom")
+                    Text(output.isEmpty ? L("Click \"Run Diagnostics\" to check your Homebrew installation.") : output)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(output.isEmpty ? .secondary : .primary)
+                        .textSelection(.enabled).padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading).id("bottom")
                 }
-                .onChange(of: output) { _ in
-                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
-                }
+                .onChange(of: output) { _ in withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
         }
     }
@@ -359,15 +584,9 @@ struct DoctorTabView: View {
         isRunning = true
         let runningMsg = L("Running brew doctor...\n")
         output = runningMsg
-        homebrewManager.streamBrewCommand(
-            "doctor",
-            arguments: [],
+        homebrewManager.streamBrewCommand("doctor", arguments: [],
             onOutput: { chunk in
-                if output == runningMsg {
-                    output = chunk
-                } else {
-                    output += chunk
-                }
+                if output == runningMsg { output = chunk } else { output += chunk }
             },
             onErrorOutput: { chunk in output += chunk },
             onCompletion: { code in
@@ -397,73 +616,47 @@ struct AboutTabView: View {
         Form {
             Section {
                 VStack(spacing: 12) {
-                    Image(nsImage: NSApp.applicationIconImage)
-                        .resizable()
-                        .frame(width: 64, height: 64)
+                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 64, height: 64)
                     VStack(spacing: 4) {
-                        Text("Kettle")
-                            .font(.system(size: 20, weight: .semibold))
-                        Text("Version \(version) (\(build))")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
+                        Text("Kettle").font(.system(size: 20, weight: .semibold))
+                        Text("Version \(version) (\(build))").font(.subheadline).foregroundStyle(.secondary).textSelection(.enabled)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity).padding(.vertical, 12)
             }
 
             Section {
                 HStack {
-                    Label(L("Developer"), systemImage: "person.circle")
-                    Spacer()
+                    Label(L("Developer"), systemImage: "person.circle"); Spacer()
                     Text("Geoion").foregroundStyle(.secondary)
                 }
                 HStack {
-                    Label(L("Contact"), systemImage: "envelope")
-                    Spacer()
-                    Button("eski.yin@gmail.com") { openURL(emailURL) }
-                        .buttonStyle(.link)
+                    Label(L("Contact"), systemImage: "envelope"); Spacer()
+                    Button("eski.yin@gmail.com") { openURL(emailURL) }.buttonStyle(.link)
                 }
                 HStack {
-                    Label(L("Repository"), systemImage: "chevron.left.forwardslash.chevron.right")
-                    Spacer()
-                    Button("github.com") { openURL(websiteURL) }
-                        .buttonStyle(.link)
+                    Label(L("Repository"), systemImage: "chevron.left.forwardslash.chevron.right"); Spacer()
+                    Button("github.com") { openURL(websiteURL) }.buttonStyle(.link)
                 }
-            } header: {
-                Text(L("Information"))
-            }
+            } header: { Text(L("Information")) }
 
             Section {
-                Button {
-                    openURL(websiteURL)
-                } label: {
+                Button { openURL(websiteURL) } label: {
                     Label(L("View Source Code"), systemImage: "arrow.up.forward.app")
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    showingChangelog = true
-                } label: {
+                }.buttonStyle(.plain)
+                Button { showingChangelog = true } label: {
                     Label(L("View Changelog"), systemImage: "list.bullet.rectangle.portrait")
-                }
-                .buttonStyle(.plain)
-
+                }.buttonStyle(.plain)
                 Button {
                     Task {
                         await updateService.checkForUpdates()
-                        if case .updateAvailable = updateService.updateStatus {
-                            showingUpdate = true
-                        }
+                        if case .updateAvailable = updateService.updateStatus { showingUpdate = true }
                     }
                 } label: {
                     HStack {
                         if case .checking = updateService.updateStatus {
                             ProgressView().controlSize(.small).frame(width: 16, height: 16)
-                        } else {
-                            Image(systemName: "arrow.down.circle")
-                        }
+                        } else { Image(systemName: "arrow.down.circle") }
                         Text(L("Check for Updates"))
                         Spacer()
                         if case .updateAvailable = updateService.updateStatus {
@@ -472,21 +665,15 @@ struct AboutTabView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .disabled({
-                    if case .checking = updateService.updateStatus { return true }
-                    return false
-                }())
-            } header: {
-                Text(L("Actions"))
-            } footer: {
-                updateStatusFooter
-            }
+                .disabled({ if case .checking = updateService.updateStatus { return true }; return false }())
+            } header: { Text(L("Actions")) }
+            footer: { updateStatusFooter }
         }
         .formStyle(.grouped)
         .sheet(isPresented: $showingChangelog) { ChangelogView() }
         .sheet(isPresented: $showingUpdate) {
-            if case .updateAvailable(let v, let releaseUrl, let downloadUrl) = updateService.updateStatus {
-                UpdateDialogView(version: v, releaseUrl: releaseUrl, downloadUrl: downloadUrl)
+            if case .updateAvailable(let v, let r, let d) = updateService.updateStatus {
+                UpdateDialogView(version: v, releaseUrl: r, downloadUrl: d)
             }
         }
         .task { await updateService.checkForUpdates() }
@@ -496,17 +683,13 @@ struct AboutTabView: View {
     private var updateStatusFooter: some View {
         switch updateService.updateStatus {
         case .updateAvailable(let v, _, _):
-            Text(String(format: L("Version %@ is available."), v))
-                .foregroundStyle(.blue)
+            Text(String(format: L("Version %@ is available."), v)).foregroundStyle(.blue)
         case .upToDate:
-            Text(L("You're up to date."))
-                .foregroundStyle(.secondary)
+            Text(L("You're up to date.")).foregroundStyle(.secondary)
         case .error(let msg):
             Text(msg).foregroundStyle(.red)
         case .checking:
-            Text(L("Checking for updates..."))
-                .foregroundStyle(.secondary)
-                .italic()
+            Text(L("Checking for updates...")).foregroundStyle(.secondary).italic()
         default:
             EmptyView()
         }
@@ -518,61 +701,39 @@ struct AboutTabView: View {
 struct UpdateDialogView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-
-    let version: String
-    let releaseUrl: String
-    let downloadUrl: String
+    let version: String; let releaseUrl: String; let downloadUrl: String
 
     var body: some View {
         VStack(spacing: 20) {
             VStack(spacing: 8) {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.blue)
-                Text(L("Update Available"))
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                Text(String(format: L("Version %@ is now available."), version))
-                    .foregroundStyle(.secondary)
+                Image(systemName: "arrow.down.circle.fill").font(.system(size: 48)).foregroundStyle(.blue)
+                Text(L("Update Available")).font(.title3).fontWeight(.semibold)
+                Text(String(format: L("Version %@ is now available."), version)).foregroundStyle(.secondary)
             }
             .padding(.top, 20)
-
             Divider()
-
             if let release = UpdateService.shared.latestRelease {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(L("What's New"))
-                            .font(.headline)
+                        Text(L("What's New")).font(.headline)
                         Text(release.body)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading).padding()
                 }
                 .frame(maxHeight: 180)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-                .padding(.horizontal)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8)).padding(.horizontal)
             }
-
             HStack(spacing: 12) {
-                Button(L("Later")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button(L("View Release")) {
-                    if let url = URL(string: releaseUrl) { openURL(url) }
-                }
+                Button(L("Later")) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(L("View Release")) { if let url = URL(string: releaseUrl) { openURL(url) } }
                 Button(L("Download")) {
-                    if let url = URL(string: downloadUrl) {
-                        openURL(url)
-                        dismiss()
-                    }
+                    if let url = URL(string: downloadUrl) { openURL(url); dismiss() }
                 }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
             }
             .padding(.bottom, 20)
         }
-        .frame(width: 480)
-        .padding(.horizontal)
+        .frame(width: 480).padding(.horizontal)
     }
 }
 
@@ -585,47 +746,24 @@ struct ChangelogView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(L("Changelog"))
-                .font(.headline)
-                .padding(.vertical, 12)
-
+            Text(L("Changelog")).font(.headline).padding(.vertical, 12)
             Divider()
-
             ScrollView {
-                if let err = error {
-                    Text(err).foregroundStyle(.red).padding()
-                } else {
-                    Text(content)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
-                }
+                if let err = error { Text(err).foregroundStyle(.red).padding() }
+                else { Text(content).padding().frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }
             }
-
             Divider()
-
-            HStack {
-                Spacer()
-                Button(L("Close")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-            }
-            .padding()
+            HStack { Spacer(); Button(L("Close")) { dismiss() }.keyboardShortcut(.cancelAction) }.padding()
         }
         .frame(minWidth: 500, idealWidth: 600, minHeight: 300, idealHeight: 450)
         .onAppear {
             guard let url = Bundle.main.url(forResource: "CHANGELOG", withExtension: "md") else {
-                error = "CHANGELOG.md not found."
-                return
+                error = "CHANGELOG.md not found."; return
             }
             do {
                 let md = try String(contentsOf: url, encoding: .utf8)
-                content = (try? AttributedString(
-                    markdown: md,
-                    options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-                )) ?? AttributedString(md)
-            } catch {
-                self.error = error.localizedDescription
-            }
+                content = (try? AttributedString(markdown: md, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(md)
+            } catch { self.error = error.localizedDescription }
         }
     }
 }
