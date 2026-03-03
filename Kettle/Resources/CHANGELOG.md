@@ -1,5 +1,48 @@
 # Kettle Changelog
 
+## Version 1.1.0 (2026-03-03)
+
+### ✨ New Features
+
+#### Packages
+- Full package info via `brew info --json=v2`: version, description, homepage, license, tap, install date, disk size
+- Outdated badge with version comparison (`1.2.3 → 1.3.0`)
+- One-click **Upgrade All** button when outdated packages exist
+- Filter to show only outdated packages
+- Dependency packages labeled with `Dependency` tag
+
+#### Casks
+- Full cask info: version, description, homepage, tap, install path, disk size, auto-updates flag
+- App icons displayed in list rows
+- Outdated version comparison badge
+- Fixed Open button to use actual installed path
+
+#### Services
+- Added search bar
+- Added **Restart** button for running services
+- Shows PID when available
+- Config panel: array values fully expanded (no truncation)
+- XML view: full content displayed without height limit
+
+#### Settings
+- **Export**: full backup (packages + casks + taps + services), plus individual exports for each type
+- **Cleanup tab**: preview and run `brew cleanup` to free disk space; preview and run `brew autoremove` to remove unused dependencies
+- **Status tab**: shows installed counts for packages, casks, taps, services, and outdated items
+
+### 🔧 Improvements
+- Rewrote UI following macOS native design patterns (FrameworkScanner style)
+- All list views: expandable rows with inline detail panels instead of split-view detail columns
+- Last refresh time shown in footer of every list view
+- Localization system aligned with FrameworkScanner: global `L()` function with dynamic bundle switching
+- All 5 languages (en, zh-Hans, zh-Hant, ja, ko) fully updated with new strings
+
+### 🐛 Bug Fixes
+- Fixed casks not loading (`brew info --json=v2 --cask --installed` unsupported; now uses `brew list --cask` + batch info query)
+- Fixed last-updated time never showing in footer
+- Fixed `enum Settings` naming conflict with SwiftUI `Settings` scene
+
+---
+
 ## Version 1.0.8 (2025-04-30)
 
 ### 🔧 Improvements
