@@ -169,3 +169,53 @@
 "settings.update.whatsNew" = "新增内容";
 "settings.update.header" = "发现新版本";
 "settings.update.versionAvailable" = "版本 %@ 已可用";
+
+/* Packages / Casks - new keys */
+"%d outdated" = "%d 个可更新";
+"All Up to Date" = "全部最新";
+"All installed packages are up to date." = "所有已安装软件包均为最新版本。";
+"All installed casks are up to date." = "所有已安装应用均为最新版本。";
+"Upgrade All" = "全部升级";
+"Upgrade all outdated packages and casks" = "升级所有可更新的软件包和应用";
+"Latest" = "最新版本";
+"Homepage" = "官网";
+"License" = "许可证";
+"Tap" = "来源";
+"Installed" = "已安装";
+"Dependency" = "依赖";
+"Auto-updates" = "自动更新";
+"Installed Path" = "安装路径";
+"Yes" = "是";
+"No" = "否";
+
+/* Services - new keys */
+"Search services..." = "搜索服务...";
+"No services match your search." = "没有匹配的服务。";
+"Restart Service" = "重启服务";
+"Are you sure you want to restart %@?" = "确定要重启 %@ 吗？";
+
+/* Settings - Status tab */
+"Outdated" = "可更新";
+
+/* Settings - Export tab */
+"Full Backup" = "完整备份";
+"Export packages, casks, taps, and services as JSON." = "将软件包、应用、软件源和服务导出为 JSON。";
+"Backup" = "备份";
+"Individual Export" = "单独导出";
+"Package List" = "软件包列表";
+"Export all installed formula packages as JSON." = "将所有已安装的 Formula 软件包导出为 JSON。";
+"Cask List" = "应用列表";
+"Export all installed casks as JSON." = "将所有已安装的应用导出为 JSON。";
+
+/* Settings - Cleanup tab */
+"Cleanup" = "清理";
+"Autoremove" = "自动移除";
+"Remove Old Versions" = "移除旧版本";
+"Removes outdated downloads and old formula versions." = "移除过期的下载文件和旧版本 Formula。";
+"Preview" = "预览";
+"Run Cleanup" = "执行清理";
+"Click Preview to check for items to clean up." = "点击「预览」查看可清理的内容。";
+"Remove Unused Dependencies" = "移除无用依赖";
+"Removes formulae that were installed as dependencies but are no longer needed." = "移除作为依赖安装但不再需要的 Formula。";
+"Run Autoremove" = "执行自动移除";
+"Click Preview to check for unused dependencies." = "点击「预览」查看可移除的无用依赖。";
