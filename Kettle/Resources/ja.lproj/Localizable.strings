@@ -1,109 +1,164 @@
-// Common
+/* Common */
 "OK" = "OK";
 "Cancel" = "キャンセル";
 "Error" = "エラー";
 "Confirm" = "確認";
 "Warning" = "警告";
-
-// Main Menu
-"menu.taps" = "タップ";
-"menu.packages" = "パッケージ";
-"menu.services" = "サービス";
-"menu.settings" = "設定";
-"menu.taps.noSelection" = "タップを選択してください";
-"menu.packages.noSelection" = "パッケージを選択してください";
-"menu.services.noSelection" = "サービスを選択してください";
-"menu.settings.noSelection" = "設定項目を選択してください";
-
-// Settings Sections
-"settings.preferences" = "環境設定";
-"settings.about" = "このアプリについて";
-"settings.export" = "エクスポート";
-"settings.status" = "状態";
-"settings.preferences.desc" = "アプリケーションと外観の設定";
-
-// System Info
-"settings.systemInfo" = "システム情報";
-"settings.systemInfoDesc" = "システムと Homebrew のインストール詳細を表示";
-"settings.cpuModel" = "CPU モデル";
-"settings.homebrewStatus" = "Homebrew の状態";
-"settings.installed" = "インストール済み";
-"settings.notInstalled" = "未インストール";
-"settings.installPath" = "インストールパス";
-
-// Export Settings
-"settings.tapList" = "タップリスト";
-"settings.exportDesc" = "タップリストを JSON ファイルにエクスポート";
-"settings.exportTaps" = "タップをエクスポート";
-"settings.exportNote" = "エクスポートされたファイルには、すべてのタップとその情報が含まれます。";
-
-// Version Info
-"Version %@" = "バージョン %@";
-"Version" = "バージョン";
-"Build" = "ビルド";
-"Developer" = "開発者";
-"Contact" = "連絡先";
-"Repository" = "リポジトリ";
-"This is an open source project." = "これはオープンソースプロジェクトです。";
-"View Source Code" = "ソースコードを表示";
-"Check for Updates" = "アップデートを確認";
-"Made with ❤️ by Geoion" = "Geoion が ❤️ を込めて作成";
-
-// Settings
-"Settings" = "設定";
-"Preferences" = "環境設定";
-"About" = "このアプリについて";
-"Export" = "エクスポート";
-"Status" = "状態";
-"Interface" = "インターフェース";
-"Applications" = "アプリケーション";
-"Language" = "言語";
-"Appearance" = "外観";
-"Language changes will take effect after restarting the app." = "言語の変更はアプリを再起動後に反映されます。";
-"Default Finder" = "デフォルトのFinder";
-"Default Editor" = "デフォルトのエディタ";
-"These settings will be used when opening files and folders." = "これらの設定はファイルやフォルダを開く際に使用されます。";
-"System Default" = "システム設定に従う";
+"Refresh" = "更新";
+"Add" = "追加";
+"Open" = "開く";
+"Remove" = "削除";
+"Update" = "アップデート";
+"Uninstall" = "アンインストール";
+"Stop" = "停止";
+"Close" = "閉じる";
+"Clear" = "クリア";
+"Loading..." = "読み込み中...";
+"Search..." = "検索...";
+"Installed" = "インストール済み";
+"Running" = "実行中";
+"Stopped" = "停止中";
+"Unknown" = "不明";
 "Follow System" = "システム設定に従う";
 "Light" = "ライト";
 "Dark" = "ダーク";
 
-// Services
-"Services" = "サービス";
-"Please select a service" = "サービスを選択してください";
-"Status" = "状態";
+/* Last Updated */
+"last.updated" = "%@ に更新";
+"last.updated.never" = "未更新";
+"last.updated.just.now" = "たった今";
+
+/* Main Menu */
+"menu.taps" = "タップ";
+"menu.packages" = "パッケージ";
+"menu.casks" = "アプリ";
+"menu.services" = "サービス";
+"menu.settings" = "設定";
+
+/* Taps */
+"taps" = "個のタップ";
+"No Taps" = "タップなし";
+"No Homebrew taps are installed." = "Homebrew タップがインストールされていません。";
+"No Results" = "結果なし";
+"No taps match your search." = "一致するタップがありません。";
+"Search Tap" = "タップを検索";
+"Add Tap" = "タップを追加";
+"Name (user/repo)" = "名前（user/repo）";
+"URL (Optional)" = "URL（任意）";
+"Command" = "コマンド";
+"Log" = "ログ";
+"Loading tap info..." = "タップ情報を読み込み中...";
+"Remove Tap" = "タップを削除";
+"Are you sure you want to remove '%@'?" = "'%@' を削除してもよろしいですか？";
+"Open in Finder" = "Finderで開く";
+"Repository" = "リポジトリ";
+"Branch" = "ブランチ";
+"Path" = "パス";
+"Size" = "サイズ";
+"Formulae" = "Formula 数";
+"Last Commit" = "最終コミット";
+
+/* Packages */
+"packages" = "個のパッケージ";
+"No Packages" = "パッケージなし";
+"No Homebrew packages are installed." = "Homebrew パッケージがインストールされていません。";
+"No packages match your search." = "一致するパッケージがありません。";
+"Search packages..." = "パッケージを検索...";
+"Uninstall Package" = "パッケージをアンインストール";
+"Are you sure you want to uninstall '%@'?" = "'%@' をアンインストールしてもよろしいですか？";
+"Version" = "バージョン";
+"Description" = "説明";
+"Dependencies" = "依存関係";
+
+/* Casks */
+"casks" = "個のアプリ";
+"No Casks" = "アプリなし";
+"No Homebrew casks are installed." = "Homebrew アプリがインストールされていません。";
+"No casks match your search." = "一致するアプリがありません。";
+"Search casks..." = "アプリを検索...";
+"Uninstall Cask" = "アプリをアンインストール";
 "Name" = "名前";
+
+/* Services */
+"services" = "個のサービス";
+"No Services" = "サービスなし";
+"No Homebrew services are available." = "利用可能な Homebrew サービスがありません。";
+"Service Info" = "サービス情報";
+"Configuration" = "設定";
+"Summary" = "概要";
+"XML" = "XML";
+"Loading configuration..." = "設定を読み込み中...";
+"Configuration file not readable." = "設定ファイルを読み取れません。";
+"No XML content available" = "XML コンテンツがありません";
+"Status" = "状態";
 "User" = "ユーザー";
 "File Path" = "ファイルパス";
-"Service Configuration" = "サービス設定";
 "Start Service" = "サービスを開始";
 "Stop Service" = "サービスを停止";
 "Are you sure you want to start %@?" = "%@ を開始してもよろしいですか？";
 "Are you sure you want to stop %@?" = "%@ を停止してもよろしいですか？";
 
-// Taps
-"Taps" = "タップ";
-"Please select a tap" = "タップを選択してください";
-"Search Tap" = "タップを検索";
-"No taps available" = "利用可能なタップがありません";
-"No results found" = "結果が見つかりません";
+/* Settings Tabs */
+"Preferences" = "環境設定";
+"Export" = "エクスポート";
+"Doctor" = "診断";
+"About" = "このアプリについて";
+
+/* Status Tab */
+"System" = "システム";
+"CPU Model" = "CPU モデル";
+"Homebrew" = "Homebrew";
+"Installation Path" = "インストールパス";
+"Repositories" = "リポジトリ";
+
+/* Preferences Tab */
+"Interface" = "インターフェース";
+"Language" = "言語";
+"Appearance" = "外観";
+"Language changes will take effect after restarting the app." = "言語の変更はアプリを再起動後に反映されます。";
+"Applications" = "アプリケーション";
+"Default Finder" = "デフォルトのFinder";
+"Default Editor" = "デフォルトのエディタ";
+"These settings will be used when opening files and folders." = "これらの設定はファイルやフォルダを開く際に使用されます。";
+
+/* Export Tab */
+"Tap List" = "タップリスト";
+"Export all installed taps and their metadata as JSON." = "インストール済みのすべてのタップとメタデータを JSON でエクスポートします。";
+"Homebrew Taps" = "Homebrew タップ";
+"Export Taps" = "タップをエクスポート";
+"Export taps panel title" = "タップをエクスポート";
 "Last updated: %@" = "最終更新：%@";
-"Unknown" = "不明";
-"Open in Finder" = "Finderで開く";
-"Visit Repository" = "リポジトリを表示";
-"Remove Tap" = "タップを削除";
-"Install Tap" = "タップをインストール";
-"Are you sure you want to remove '%@'?" = "'%@' を削除してもよろしいですか？";
 
-// Packages
-"Packages" = "パッケージ";
-"Please select a package" = "パッケージを選択してください";
-"Package Information" = "パッケージ情報";
-"Name" = "名前";
-"Version" = "バージョン";
-"Description" = "説明";
+/* Doctor Tab */
+"Run Diagnostics" = "診断を実行";
+"Running brew doctor...\n" = "brew doctor を実行中...\n";
+"Click \"Run Diagnostics\" to check your Homebrew installation." = "「診断を実行」をクリックして Homebrew のインストール状態を確認します。";
+"Your system is ready to brew." = "システムは正常です。";
 
-/* Update Feature */
+/* About Tab */
+"Developer" = "開発者";
+"Contact" = "連絡先";
+"Information" = "情報";
+"Actions" = "操作";
+"View Source Code" = "ソースコードを表示";
+"View Changelog" = "更新履歴を表示";
+"Check for Updates" = "アップデートを確認";
+"Version %@ is available." = "バージョン %@ が利用可能です。";
+"You're up to date." = "最新バージョンです。";
+"Checking for updates..." = "アップデートを確認中...";
+
+/* Update Dialog */
+"Update Available" = "アップデートが利用可能";
+"Version %@ is now available." = "バージョン %@ が利用可能になりました。";
+"What's New" = "新機能";
+"Later" = "後で";
+"View Release" = "リリース情報を見る";
+"Download" = "ダウンロード";
+
+/* Changelog */
+"Changelog" = "更新履歴";
+
+/* Update Service */
 "settings.update.available" = "バージョン %@ が利用可能です";
 "settings.update.notAvailable" = "お使いのアプリは最新です";
 "settings.update.error" = "アップデートの確認中にエラーが発生しました";
@@ -113,4 +168,4 @@
 "settings.update.close" = "閉じる";
 "settings.update.whatsNew" = "新機能";
 "settings.update.header" = "アップデートが利用可能";
-"settings.update.versionAvailable" = "バージョン %@ が利用可能です"; 
+"settings.update.versionAvailable" = "バージョン %@ が利用可能です";
