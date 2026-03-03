@@ -223,9 +223,6 @@ struct TapListView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                LastUpdatedLabel(date: lastUpdate)
-            }
-            ToolbarItem(placement: .primaryAction) {
                 Button {
                     refresh()
                 } label: {
@@ -249,12 +246,11 @@ struct TapListView: View {
             AddTapView(homebrewManager: homebrewManager)
         }
         .onAppear {
+            if let (_, update) = homebrewManager.loadTapsFromCache() {
+                lastUpdate = update
+            }
             if homebrewManager.taps.isEmpty {
-                if let (_, update) = homebrewManager.loadTapsFromCache() {
-                    lastUpdate = update
-                } else {
-                    refresh()
-                }
+                refresh()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .refreshTaps)) { _ in
