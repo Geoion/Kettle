@@ -171,3 +171,54 @@
 "settings.update.whatsNew" = "What's New";
 "settings.update.header" = "Update Available";
 "settings.update.versionAvailable" = "Version %@ is now available";
+
+/* Packages / Casks - new keys */
+"%d outdated" = "%d outdated";
+"All Up to Date" = "All Up to Date";
+"All installed packages are up to date." = "All installed packages are up to date.";
+"All installed casks are up to date." = "All installed casks are up to date.";
+"Upgrade All" = "Upgrade All";
+"Upgrade all outdated packages and casks" = "Upgrade all outdated packages and casks";
+"Latest" = "Latest";
+"Homepage" = "Homepage";
+"License" = "License";
+"Tap" = "Tap";
+"Installed" = "Installed";
+"Dependency" = "Dependency";
+"Auto-updates" = "Auto-updates";
+"Installed Path" = "Installed Path";
+"Yes" = "Yes";
+"No" = "No";
+
+/* Services - new keys */
+"Search services..." = "Search services...";
+"No services match your search." = "No services match your search.";
+"Restart Service" = "Restart Service";
+"Are you sure you want to restart %@?" = "Are you sure you want to restart %@?";
+
+/* Settings - Status tab */
+"Installed" = "Installed";
+"Outdated" = "Outdated";
+
+/* Settings - Export tab */
+"Full Backup" = "Full Backup";
+"Export packages, casks, taps, and services as JSON." = "Export packages, casks, taps, and services as JSON.";
+"Backup" = "Backup";
+"Individual Export" = "Individual Export";
+"Package List" = "Package List";
+"Export all installed formula packages as JSON." = "Export all installed formula packages as JSON.";
+"Cask List" = "Cask List";
+"Export all installed casks as JSON." = "Export all installed casks as JSON.";
+
+/* Settings - Cleanup tab */
+"Cleanup" = "Cleanup";
+"Autoremove" = "Autoremove";
+"Remove Old Versions" = "Remove Old Versions";
+"Removes outdated downloads and old formula versions." = "Removes outdated downloads and old formula versions.";
+"Preview" = "Preview";
+"Run Cleanup" = "Run Cleanup";
+"Click Preview to check for items to clean up." = "Click Preview to check for items to clean up.";
+"Remove Unused Dependencies" = "Remove Unused Dependencies";
+"Removes formulae that were installed as dependencies but are no longer needed." = "Removes formulae that were installed as dependencies but are no longer needed.";
+"Run Autoremove" = "Run Autoremove";
+"Click Preview to check for unused dependencies." = "Click Preview to check for unused dependencies.";
