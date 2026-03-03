@@ -1,109 +1,164 @@
-// Common
+/* Common */
 "OK" = "확인";
 "Cancel" = "취소";
 "Error" = "오류";
 "Confirm" = "확인";
 "Warning" = "경고";
-
-// Main Menu
-"menu.taps" = "탭";
-"menu.packages" = "패키지";
-"menu.services" = "서비스";
-"menu.settings" = "설정";
-"menu.taps.noSelection" = "탭을 선택하세요";
-"menu.packages.noSelection" = "패키지를 선택하세요";
-"menu.services.noSelection" = "서비스를 선택하세요";
-"menu.settings.noSelection" = "설정 항목을 선택하세요";
-
-// Settings Sections
-"settings.preferences" = "환경설정";
-"settings.about" = "정보";
-"settings.export" = "내보내기";
-"settings.status" = "상태";
-"settings.preferences.desc" = "애플리케이션 및 외관 설정";
-
-// System Info
-"settings.systemInfo" = "시스템 정보";
-"settings.systemInfoDesc" = "시스템 및 Homebrew 설치 세부정보 보기";
-"settings.cpuModel" = "CPU 모델";
-"settings.homebrewStatus" = "Homebrew 상태";
-"settings.installed" = "설치됨";
-"settings.notInstalled" = "설치되지 않음";
-"settings.installPath" = "설치 경로";
-
-// Export Settings
-"settings.tapList" = "탭 목록";
-"settings.exportDesc" = "탭 목록을 JSON 파일로 내보내기";
-"settings.exportTaps" = "탭 내보내기";
-"settings.exportNote" = "내보낸 파일에는 모든 탭과 해당 정보가 포함됩니다.";
-
-// Version Info
-"Version %@" = "버전 %@";
-"Version" = "버전";
-"Build" = "빌드";
-"Developer" = "개발자";
-"Contact" = "연락처";
-"Repository" = "저장소";
-"This is an open source project." = "이것은 오픈 소스 프로젝트입니다.";
-"View Source Code" = "소스 코드 보기";
-"Check for Updates" = "업데이트 확인";
-"Made with ❤️ by Geoion" = "Geoion이 ❤️으로 만듦";
-
-// Settings
-"Settings" = "설정";
-"Preferences" = "환경설정";
-"About" = "정보";
-"Export" = "내보내기";
-"Status" = "상태";
-"Interface" = "인터페이스";
-"Applications" = "응용 프로그램";
-"Language" = "언어";
-"Appearance" = "모양";
-"Language changes will take effect after restarting the app." = "언어 변경은 앱을 다시 시작한 후에 적용됩니다.";
-"Default Finder" = "기본 Finder";
-"Default Editor" = "기본 편집기";
-"These settings will be used when opening files and folders." = "이 설정은 파일과 폴더를 열 때 사용됩니다.";
-"System Default" = "시스템 기본값";
+"Refresh" = "새로 고침";
+"Add" = "추가";
+"Open" = "열기";
+"Remove" = "제거";
+"Update" = "업데이트";
+"Uninstall" = "제거";
+"Stop" = "중지";
+"Close" = "닫기";
+"Clear" = "지우기";
+"Loading..." = "로딩 중...";
+"Search..." = "검색...";
+"Installed" = "설치됨";
+"Running" = "실행 중";
+"Stopped" = "중지됨";
+"Unknown" = "알 수 없음";
 "Follow System" = "시스템 설정에 따름";
 "Light" = "라이트";
 "Dark" = "다크";
 
-// Services
-"Services" = "서비스";
-"Please select a service" = "서비스를 선택하세요";
-"Status" = "상태";
+/* Last Updated */
+"last.updated" = "%@ 업데이트됨";
+"last.updated.never" = "업데이트 없음";
+"last.updated.just.now" = "방금";
+
+/* Main Menu */
+"menu.taps" = "탭";
+"menu.packages" = "패키지";
+"menu.casks" = "앱";
+"menu.services" = "서비스";
+"menu.settings" = "설정";
+
+/* Taps */
+"taps" = "개의 탭";
+"No Taps" = "탭 없음";
+"No Homebrew taps are installed." = "설치된 Homebrew 탭이 없습니다.";
+"No Results" = "결과 없음";
+"No taps match your search." = "검색과 일치하는 탭이 없습니다.";
+"Search Tap" = "탭 검색";
+"Add Tap" = "탭 추가";
+"Name (user/repo)" = "이름（user/repo）";
+"URL (Optional)" = "URL（선택사항）";
+"Command" = "명령어";
+"Log" = "로그";
+"Loading tap info..." = "탭 정보를 불러오는 중...";
+"Remove Tap" = "탭 제거";
+"Are you sure you want to remove '%@'?" = "'%@'를 제거하시겠습니까?";
+"Open in Finder" = "Finder에서 열기";
+"Repository" = "저장소";
+"Branch" = "브랜치";
+"Path" = "경로";
+"Size" = "크기";
+"Formulae" = "Formula 수";
+"Last Commit" = "최근 커밋";
+
+/* Packages */
+"packages" = "개의 패키지";
+"No Packages" = "패키지 없음";
+"No Homebrew packages are installed." = "설치된 Homebrew 패키지가 없습니다.";
+"No packages match your search." = "검색과 일치하는 패키지가 없습니다.";
+"Search packages..." = "패키지 검색...";
+"Uninstall Package" = "패키지 제거";
+"Are you sure you want to uninstall '%@'?" = "'%@'를 제거하시겠습니까?";
+"Version" = "버전";
+"Description" = "설명";
+"Dependencies" = "의존성";
+
+/* Casks */
+"casks" = "개의 앱";
+"No Casks" = "앱 없음";
+"No Homebrew casks are installed." = "설치된 Homebrew 앱이 없습니다.";
+"No casks match your search." = "검색과 일치하는 앱이 없습니다.";
+"Search casks..." = "앱 검색...";
+"Uninstall Cask" = "앱 제거";
 "Name" = "이름";
+
+/* Services */
+"services" = "개의 서비스";
+"No Services" = "서비스 없음";
+"No Homebrew services are available." = "사용 가능한 Homebrew 서비스가 없습니다.";
+"Service Info" = "서비스 정보";
+"Configuration" = "설정";
+"Summary" = "요약";
+"XML" = "XML";
+"Loading configuration..." = "설정을 불러오는 중...";
+"Configuration file not readable." = "설정 파일을 읽을 수 없습니다.";
+"No XML content available" = "XML 콘텐츠 없음";
+"Status" = "상태";
 "User" = "사용자";
 "File Path" = "파일 경로";
-"Service Configuration" = "서비스 설정";
 "Start Service" = "서비스 시작";
 "Stop Service" = "서비스 중지";
 "Are you sure you want to start %@?" = "%@를 시작하시겠습니까?";
 "Are you sure you want to stop %@?" = "%@를 중지하시겠습니까?";
 
-// Taps
-"Taps" = "탭";
-"Please select a tap" = "탭을 선택하세요";
-"Search Tap" = "탭 검색";
-"No taps available" = "사용 가능한 탭이 없습니다";
-"No results found" = "결과를 찾을 수 없습니다";
+/* Settings Tabs */
+"Preferences" = "환경설정";
+"Export" = "내보내기";
+"Doctor" = "진단";
+"About" = "정보";
+
+/* Status Tab */
+"System" = "시스템";
+"CPU Model" = "CPU 모델";
+"Homebrew" = "Homebrew";
+"Installation Path" = "설치 경로";
+"Repositories" = "저장소";
+
+/* Preferences Tab */
+"Interface" = "인터페이스";
+"Language" = "언어";
+"Appearance" = "모양";
+"Language changes will take effect after restarting the app." = "언어 변경은 앱을 다시 시작한 후에 적용됩니다.";
+"Applications" = "응용 프로그램";
+"Default Finder" = "기본 Finder";
+"Default Editor" = "기본 편집기";
+"These settings will be used when opening files and folders." = "이 설정은 파일과 폴더를 열 때 사용됩니다.";
+
+/* Export Tab */
+"Tap List" = "탭 목록";
+"Export all installed taps and their metadata as JSON." = "설치된 모든 탭과 메타데이터를 JSON으로 내보냅니다.";
+"Homebrew Taps" = "Homebrew 탭";
+"Export Taps" = "탭 내보내기";
+"Export taps panel title" = "탭 내보내기";
 "Last updated: %@" = "마지막 업데이트: %@";
-"Unknown" = "알 수 없음";
-"Open in Finder" = "Finder에서 열기";
-"Visit Repository" = "저장소 방문";
-"Remove Tap" = "탭 제거";
-"Install Tap" = "탭 설치";
-"Are you sure you want to remove '%@'?" = "'%@'를 제거하시겠습니까?";
 
-// Packages
-"Packages" = "패키지";
-"Please select a package" = "패키지를 선택하세요";
-"Package Information" = "패키지 정보";
-"Name" = "이름";
-"Version" = "버전";
-"Description" = "설명";
+/* Doctor Tab */
+"Run Diagnostics" = "진단 실행";
+"Running brew doctor...\n" = "brew doctor 실행 중...\n";
+"Click \"Run Diagnostics\" to check your Homebrew installation." = "「진단 실행」을 클릭하여 Homebrew 설치 상태를 확인합니다.";
+"Your system is ready to brew." = "시스템이 정상입니다.";
 
-/* Update Feature */
+/* About Tab */
+"Developer" = "개발자";
+"Contact" = "연락처";
+"Information" = "정보";
+"Actions" = "작업";
+"View Source Code" = "소스 코드 보기";
+"View Changelog" = "변경 로그 보기";
+"Check for Updates" = "업데이트 확인";
+"Version %@ is available." = "버전 %@을 사용할 수 있습니다.";
+"You're up to date." = "최신 버전입니다.";
+"Checking for updates..." = "업데이트 확인 중...";
+
+/* Update Dialog */
+"Update Available" = "업데이트 가능";
+"Version %@ is now available." = "버전 %@을 사용할 수 있습니다.";
+"What's New" = "새로운 기능";
+"Later" = "나중에";
+"View Release" = "릴리스 정보 보기";
+"Download" = "다운로드";
+
+/* Changelog */
+"Changelog" = "변경 로그";
+
+/* Update Service */
 "settings.update.available" = "버전 %@ 사용 가능";
 "settings.update.notAvailable" = "앱이 최신 상태입니다";
 "settings.update.error" = "업데이트 확인 중 오류 발생";
@@ -113,4 +168,4 @@
 "settings.update.close" = "닫기";
 "settings.update.whatsNew" = "새로운 기능";
 "settings.update.header" = "업데이트 가능";
-"settings.update.versionAvailable" = "버전 %@ 사용 가능"; 
+"settings.update.versionAvailable" = "버전 %@ 사용 가능";
