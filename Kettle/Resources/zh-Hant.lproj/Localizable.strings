@@ -1,116 +1,171 @@
-// Common
+/* Common */
 "OK" = "確定";
 "Cancel" = "取消";
 "Error" = "錯誤";
 "Confirm" = "確認";
 "Warning" = "警告";
-
-// Main Menu
-"menu.taps" = "軟體來源";
-"menu.packages" = "軟體包";
-"menu.services" = "服務";
-"menu.settings" = "設定";
-"menu.taps.noSelection" = "請選擇一個軟體來源";
-"menu.packages.noSelection" = "請選擇一個軟體包";
-"menu.services.noSelection" = "請選擇一個服務";
-"menu.settings.noSelection" = "請選擇一個設定項";
-
-// Settings Sections
-"settings.preferences" = "偏好設定";
-"settings.about" = "關於";
-"settings.export" = "匯出";
-"settings.status" = "狀態";
-"settings.preferences.desc" = "配置您的首選應用程式和外觀";
-
-// System Info
-"settings.systemInfo" = "系統資訊";
-"settings.systemInfoDesc" = "查看系統和 Homebrew 安裝詳情";
-"settings.cpuModel" = "CPU 型號";
-"settings.homebrewStatus" = "Homebrew 狀態";
-"settings.installed" = "已安裝";
-"settings.notInstalled" = "未安裝";
-"settings.installPath" = "安裝路徑";
-
-// Export Settings
-"settings.tapList" = "軟體來源列表";
-"settings.exportDesc" = "將您的軟體來源列表匯出為 JSON 檔案";
-"settings.exportTaps" = "匯出軟體來源";
-"settings.exportNote" = "匯出的檔案將包含所有軟體來源及其資訊。";
-
-// Version Info
-"Version %@" = "版本 %@";
-"Version" = "版本";
-"Build" = "構建";
-"Developer" = "開發者";
-"Contact" = "聯絡方式";
-"Repository" = "程式碼倉庫";
-"This is an open source project." = "這是一個開源專案。";
-"View Source Code" = "查看原始碼";
-"Check for Updates" = "檢查更新";
-"Made with ❤️ by Geoion" = "由 Geoion 用 ❤️ 製作";
-
-// Settings
-"Settings" = "設定";
-"Preferences" = "偏好設定";
-"About" = "關於";
-"Export" = "匯出";
-"Status" = "狀態";
-"Interface" = "介面";
-"Applications" = "應用程式";
-"Language" = "語言";
-"Appearance" = "外觀";
-"Language changes will take effect after restarting the app." = "語言更改將在重新啟動應用程式後生效。";
-"Default Finder" = "預設訪達";
-"Default Editor" = "預設編輯器";
-"These settings will be used when opening files and folders." = "這些設定將用於開啟檔案和資料夾。";
-"System Default" = "跟隨系統";
+"Refresh" = "重新整理";
+"Add" = "新增";
+"Open" = "開啟";
+"Remove" = "移除";
+"Update" = "更新";
+"Uninstall" = "解除安裝";
+"Stop" = "停止";
+"Close" = "關閉";
+"Clear" = "清除";
+"Loading..." = "載入中...";
+"Search..." = "搜尋...";
+"Installed" = "已安裝";
+"Running" = "執行中";
+"Stopped" = "已停止";
+"Unknown" = "未知";
 "Follow System" = "跟隨系統";
 "Light" = "淺色";
 "Dark" = "深色";
 
-// Services
-"Services" = "服務";
-"Please select a service" = "請選擇一個服務";
-"Status" = "狀態";
+/* Last Updated */
+"last.updated" = "更新於 %@";
+"last.updated.never" = "從未更新";
+"last.updated.just.now" = "剛剛";
+
+/* Main Menu */
+"menu.taps" = "軟體來源";
+"menu.packages" = "軟體包";
+"menu.casks" = "應用程式";
+"menu.services" = "服務";
+"menu.settings" = "設定";
+
+/* Taps */
+"taps" = "個軟體來源";
+"No Taps" = "沒有軟體來源";
+"No Homebrew taps are installed." = "未安裝任何 Homebrew 軟體來源。";
+"No Results" = "無結果";
+"No taps match your search." = "沒有符合的軟體來源。";
+"Search Tap" = "搜尋軟體來源";
+"Add Tap" = "新增軟體來源";
+"Name (user/repo)" = "名稱（user/repo）";
+"URL (Optional)" = "URL（選填）";
+"Command" = "指令";
+"Log" = "日誌";
+"Loading tap info..." = "正在載入軟體來源資訊...";
+"Remove Tap" = "移除軟體來源";
+"Are you sure you want to remove '%@'?" = "確定要移除 '%@' 嗎？";
+"Open in Finder" = "在訪達中開啟";
+"Repository" = "儲存庫";
+"Branch" = "分支";
+"Path" = "路徑";
+"Size" = "大小";
+"Formulae" = "Formula 數量";
+"Last Commit" = "最近提交";
+
+/* Packages */
+"packages" = "個軟體包";
+"No Packages" = "沒有軟體包";
+"No Homebrew packages are installed." = "未安裝任何 Homebrew 軟體包。";
+"No packages match your search." = "沒有符合的軟體包。";
+"Search packages..." = "搜尋軟體包...";
+"Uninstall Package" = "解除安裝軟體包";
+"Are you sure you want to uninstall '%@'?" = "確定要解除安裝 '%@' 嗎？";
+"Version" = "版本";
+"Description" = "描述";
+"Dependencies" = "相依套件";
+
+/* Casks */
+"casks" = "個應用程式";
+"No Casks" = "沒有應用程式";
+"No Homebrew casks are installed." = "未安裝任何 Homebrew 應用程式。";
+"No casks match your search." = "沒有符合的應用程式。";
+"Search casks..." = "搜尋應用程式...";
+"Uninstall Cask" = "解除安裝應用程式";
 "Name" = "名稱";
+
+/* Services */
+"services" = "個服務";
+"No Services" = "沒有服務";
+"No Homebrew services are available." = "沒有可用的 Homebrew 服務。";
+"Service Info" = "服務資訊";
+"Configuration" = "設定檔";
+"Summary" = "摘要";
+"XML" = "XML";
+"Loading configuration..." = "正在載入設定...";
+"Configuration file not readable." = "設定檔無法讀取。";
+"No XML content available" = "沒有 XML 內容";
+"Status" = "狀態";
 "User" = "使用者";
 "File Path" = "檔案路徑";
-"Service Configuration" = "服務設定";
 "Start Service" = "啟動服務";
 "Stop Service" = "停止服務";
 "Are you sure you want to start %@?" = "確定要啟動 %@ 嗎？";
 "Are you sure you want to stop %@?" = "確定要停止 %@ 嗎？";
 
-// Taps
-"Taps" = "軟體來源";
-"Please select a tap" = "請選擇一個軟體來源";
-"Search Tap" = "搜尋軟體來源";
-"No taps available" = "沒有可用的軟體來源";
-"No results found" = "未找到結果";
+/* Settings Tabs */
+"Preferences" = "偏好設定";
+"Export" = "匯出";
+"Doctor" = "診斷";
+"About" = "關於";
+
+/* Status Tab */
+"System" = "系統";
+"CPU Model" = "CPU 型號";
+"Homebrew" = "Homebrew";
+"Installation Path" = "安裝路徑";
+"Repositories" = "儲存庫";
+
+/* Preferences Tab */
+"Interface" = "介面";
+"Language" = "語言";
+"Appearance" = "外觀";
+"Language changes will take effect after restarting the app." = "語言更改將在重新啟動應用程式後生效。";
+"Applications" = "應用程式";
+"Default Finder" = "預設訪達";
+"Default Editor" = "預設編輯器";
+"These settings will be used when opening files and folders." = "這些設定將用於開啟檔案和資料夾。";
+
+/* Export Tab */
+"Tap List" = "軟體來源列表";
+"Export all installed taps and their metadata as JSON." = "將所有已安裝的軟體來源及其元資料匯出為 JSON。";
+"Homebrew Taps" = "Homebrew 軟體來源";
+"Export Taps" = "匯出軟體來源";
+"Export taps panel title" = "匯出軟體來源";
 "Last updated: %@" = "最後更新：%@";
-"Unknown" = "未知";
-"Open in Finder" = "在訪達中開啟";
-"Visit Repository" = "訪問儲存庫";
-"Remove Tap" = "移除軟體來源";
-"Install Tap" = "安裝軟體來源";
-"Are you sure you want to remove '%@'?" = "確定要移除 '%@' 嗎？";
 
-// Packages
-"Packages" = "軟體包";
-"Please select a package" = "請選擇一個軟體包";
-"Package Information" = "軟體包資訊";
-"Name" = "名稱";
-"Version" = "版本";
-"Description" = "描述";
+/* Doctor Tab */
+"Run Diagnostics" = "執行診斷";
+"Running brew doctor...\n" = "正在執行 brew doctor...\n";
+"Click \"Run Diagnostics\" to check your Homebrew installation." = "點擊「執行診斷」檢查 Homebrew 安裝狀態。";
+"Your system is ready to brew." = "您的系統已準備就緒。";
 
-/* Update Feature */
+/* About Tab */
+"Developer" = "開發者";
+"Contact" = "聯絡方式";
+"Information" = "資訊";
+"Actions" = "操作";
+"View Source Code" = "查看原始碼";
+"View Changelog" = "查看更新日誌";
+"Check for Updates" = "檢查更新";
+"Version %@ is available." = "版本 %@ 可用。";
+"You're up to date." = "已是最新版本。";
+"Checking for updates..." = "正在檢查更新...";
+
+/* Update Dialog */
+"Update Available" = "發現新版本";
+"Version %@ is now available." = "版本 %@ 現已可用。";
+"What's New" = "新增內容";
+"Later" = "稍後";
+"View Release" = "查看發布資訊";
+"Download" = "下載";
+
+/* Changelog */
+"Changelog" = "更新日誌";
+
+/* Update Service */
 "settings.update.available" = "版本 %@ 可更新";
 "settings.update.notAvailable" = "您的應用已是最新版本";
 "settings.update.error" = "檢查更新出錯";
 "settings.update.checking" = "正在檢查更新";
 "settings.update.download" = "下載";
-"settings.update.viewRelease" = "檢視發布資訊";
+"settings.update.viewRelease" = "查看發布資訊";
 "settings.update.close" = "關閉";
 "settings.update.whatsNew" = "新增內容";
 "settings.update.header" = "發現新版本";
-"settings.update.versionAvailable" = "版本 %@ 已可用"; 
+"settings.update.versionAvailable" = "版本 %@ 已可用";
