@@ -1,15 +1,14 @@
 import Foundation
 import SwiftUI
 import OSLog
-import Combine
-import AppKit
+
+// MARK: - TapInfo
 
 struct TapInfo: Codable, Hashable {
     let name: String
     let url: String
     let installed: Bool
     let info: String
-    // 结构化字段
     let status: String?
     let commands: String?
     let casks: String?
@@ -23,6 +22,8 @@ struct TapInfo: Codable, Hashable {
     let filesSize: String?
 }
 
+// MARK: - HomebrewManager
+
 class HomebrewManager: ObservableObject {
     @Published var isHomebrewInstalled = false
     @Published var packages: [HomebrewPackage] = []
@@ -30,151 +31,80 @@ class HomebrewManager: ObservableObject {
     @Published var services: [HomebrewService] = []
     @Published var taps: [HomebrewTap] = []
     @Published var tapInfos: [String: TapInfo] = [:]
+    @Published var outdatedPackages: [OutdatedInfo] = []
     @Published var homebrewPath: String? = nil
-    @Published var isLoadingTaps: Bool = false
-    @Published var isLoadingServices: Bool = false
-    @Published var isLoadingPackages: Bool = false
-    @Published var isLoadingCasks: Bool = false
-    
-    private let fileManager = FileManager.default
+    @Published var isLoadingTaps = false
+    @Published var isLoadingServices = false
+    @Published var isLoadingPackages = false
+    @Published var isLoadingCasks = false
+
     private let logger = Logger(subsystem: "com.kettle.app", category: "Homebrew")
-    private var cancellables = Set<AnyCancellable>()
     private let cacheDirectory: URL
-    private let tapsCacheFile: URL
-    private let servicesCacheFile: URL
     private let packagesCacheKey = "cachedPackages"
     private let packagesUpdateKey = "cachedPackagesUpdate"
     private let casksCacheKey = "cachedCasks"
     private let casksUpdateKey = "cachedCasksUpdate"
     private var currentProcess: Process?
-    
+
     init() {
-        // Cache setup
         let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         cacheDirectory = appSupportDir.appendingPathComponent("Kettle")
-        tapsCacheFile = cacheDirectory.appendingPathComponent("taps_cache.json")
-        servicesCacheFile = cacheDirectory.appendingPathComponent("services_cache.json")
+        try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
 
-        do {
-            try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true, attributes: nil)
-        } catch {
-            print("Error creating cache directory: \(error)")
-        }
-
-        // Find Homebrew path *before* checking installation
-        self.homebrewPath = findHomebrewPath()
+        homebrewPath = findHomebrewPath()
         checkHomebrewInstallation()
 
         if isHomebrewInstalled {
-             loadTapsFromCache()
-             loadServicesFromCache()
-             loadPackagesFromCache()
-             loadCasksFromCache()
+            loadTapsFromCache()
+            loadServicesFromCache()
+            loadPackagesFromCache()
+            loadCasksFromCache()
         }
     }
-    
-    // --- New/Restored Path Finding Logic --- 
+
+    // MARK: - Path Detection
+
     private func findHomebrewPath() -> String? {
-        let fileManager = FileManager.default
-        let standardPaths = [
-            "/opt/homebrew/bin/brew", // Apple Silicon
-            "/usr/local/bin/brew"    // Intel
-        ]
-
+        let standardPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
         for path in standardPaths {
-            if fileManager.fileExists(atPath: path) {
-                logger.info("Found brew at standard path: \(path)")
-                return path
-            }
+            if FileManager.default.fileExists(atPath: path) { return path }
         }
-
-        // Check PATH environment variable
         if let pathVar = ProcessInfo.processInfo.environment["PATH"] {
-            let paths = pathVar.components(separatedBy: ":")
-            for dir in paths {
+            for dir in pathVar.components(separatedBy: ":") {
                 let brewPath = (dir as NSString).appendingPathComponent("brew")
-                if fileManager.fileExists(atPath: brewPath) {
-                    logger.info("Found brew in PATH: \(brewPath)")
-                    return brewPath
-                }
+                if FileManager.default.fileExists(atPath: brewPath) { return brewPath }
             }
         }
-        
-        logger.warning("Could not find brew executable.")
-        return nil // Return nil if not found
+        return nil
     }
-    // --- End Path Finding Logic ---
 
     func checkHomebrewInstallation() {
-        // Now homebrewPath should be set (or nil if not found)
-        isHomebrewInstalled = fileManager.fileExists(atPath: homebrewPath ?? "")
-        logger.info("Homebrew 安装检查结果: \(self.isHomebrewInstalled ? "已安装，路径：" + (self.homebrewPath ?? "未知") : "未安装")")
+        isHomebrewInstalled = FileManager.default.fileExists(atPath: homebrewPath ?? "")
     }
 
-    // Add public method to get installation path (modified)
-     func getInstallationPath() -> String {
-         return homebrewPath ?? NSLocalizedString("path.notAvailable", comment: "Path not available placeholder")
-     }
-    
-    func installHomebrew() async throws {
-        logger.info("Starting Homebrew installation")
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = ["-c", "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""]
-        do {
-            try process.run()
-            process.waitUntilExit()
-            if process.terminationStatus == 0 {
-                logger.info("Homebrew installation completed successfully")
-                await MainActor.run {
-                    isHomebrewInstalled = true
-                }
-            } else {
-                logger.error("Homebrew installation failed with exit code \(process.terminationStatus)")
-                throw HomebrewError.installationFailed("Exit code: \(process.terminationStatus)")
-            }
-        } catch {
-            logger.error("Homebrew installation failed: \(error.localizedDescription)")
-            throw HomebrewError.installationFailed(error.localizedDescription)
-        }
+    func getInstallationPath() -> String {
+        homebrewPath ?? "-"
     }
-    
+
+    // MARK: - Command Execution
+
     func executeBrewCommand(_ command: String) async throws -> String {
-        // Use the found path
-        guard let currentBrewPath = self.homebrewPath else {
-            logger.error("Homebrew path is not set, cannot execute command.")
+        guard let brewPath = homebrewPath else {
             throw HomebrewError.invalidState("Homebrew path not found")
         }
-        print("尝试执行命令: \(currentBrewPath) \(command)") // Log the actual path used
         guard isHomebrewInstalled else {
-            logger.error("尝试在未安装 Homebrew 的情况下执行命令")
-            throw HomebrewError.invalidState("Homebrew 未安装")
+            throw HomebrewError.invalidState("Homebrew not installed")
         }
-        logger.debug("执行命令: brew \(command)")
+
         let process = Process()
         currentProcess = process
         let pipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: currentBrewPath) // Use found path
+        process.executableURL = URL(fileURLWithPath: brewPath)
         process.arguments = command.components(separatedBy: " ")
         process.standardOutput = pipe
         process.standardError = pipe
-        
-        // 设置环境变量
-        var env = ProcessInfo.processInfo.environment
-        if var path = env["PATH"] {
-            // 确保 /opt/homebrew/bin 和 /usr/local/bin 在 PATH 中
-            if !path.contains("/opt/homebrew/bin") {
-                path = "/opt/homebrew/bin:" + path
-            }
-            if !path.contains("/usr/local/bin") {
-                path = "/usr/local/bin:" + path
-            }
-            env["PATH"] = path
-        } else {
-            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        }
-        process.environment = env
-        
+        process.environment = brewEnvironment()
+
         do {
             try process.run()
             process.waitUntilExit()
@@ -182,261 +112,488 @@ class HomebrewManager: ObservableObject {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8) ?? ""
             if process.terminationStatus != 0 {
-                logger.error("命令执行失败: brew \(command) (退出码: \(process.terminationStatus))")
-                logger.error("输出: \(output)")
                 throw HomebrewError.commandFailed(command, process.terminationStatus)
             }
-            logger.debug("命令输出: \(output)")
             return output
         } catch {
             currentProcess = nil
-            logger.error("命令执行失败: \(error.localizedDescription)")
             throw error
         }
     }
-    
-    func terminateBrewProcess() async throws {
-        if let process = currentProcess {
-            logger.info("正在终止 brew 进程")
-            process.terminate()
-            currentProcess = nil
-            
-            // 使用 pkill 确保所有相关进程都被终止
-            let killProcess = Process()
-            killProcess.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-            killProcess.arguments = ["-f", "brew"]
-            
-            do {
-                try killProcess.run()
-                killProcess.waitUntilExit()
-                logger.info("成功终止 brew 进程")
-            } catch {
-                logger.error("终止 brew 进程时出错: \(error.localizedDescription)")
-                throw error
-            }
+
+    func executeBrewCommandWithArgs(_ args: [String]) async throws -> String {
+        guard let brewPath = homebrewPath else {
+            throw HomebrewError.invalidState("Homebrew path not found")
         }
-    }
-    
-    func executeSudoCommand(_ command: String, _ args: [String]) async throws -> String {
-        print("尝试执行 sudo 命令: \(command) \(args.joined(separator: " "))")
         let process = Process()
+        currentProcess = process
         let pipe = Pipe()
-        
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-        var arguments = ["-n"] // -n 表示不提示输入密码，如果需要密码则直接返回错误
-        arguments.append(command)
-        arguments.append(contentsOf: args)
-        process.arguments = arguments
+        process.executableURL = URL(fileURLWithPath: brewPath)
+        process.arguments = args
         process.standardOutput = pipe
         process.standardError = pipe
-        
+        process.environment = brewEnvironment()
+
         do {
             try process.run()
             process.waitUntilExit()
+            currentProcess = nil
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let output = String(data: data, encoding: .utf8) ?? ""
-            
             if process.terminationStatus != 0 {
-                print("sudo 命令执行失败: \(output)")
-                throw NSError(domain: "HomebrewManager",
-                            code: Int(process.terminationStatus),
-                            userInfo: [NSLocalizedDescriptionKey: "需要管理员权限: \(output)"])
+                throw HomebrewError.commandFailed(args.joined(separator: " "), process.terminationStatus)
             }
             return output
         } catch {
-            print("sudo 命令执行错误: \(error)")
+            currentProcess = nil
             throw error
         }
     }
-    
+
+    func terminateBrewProcess() async throws {
+        currentProcess?.terminate()
+        currentProcess = nil
+        let kill = Process()
+        kill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        kill.arguments = ["-f", "brew"]
+        try? kill.run()
+        kill.waitUntilExit()
+    }
+
+    @MainActor
+    func streamBrewCommand(
+        _ command: String,
+        arguments: [String] = [],
+        onOutput: @escaping (String) -> Void,
+        onErrorOutput: @escaping (String) -> Void,
+        onCompletion: @escaping (Int32) -> Void
+    ) {
+        guard let brewPath = homebrewPath else {
+            onErrorOutput("Homebrew path not found.\n")
+            onCompletion(-1)
+            return
+        }
+        let process = Process()
+        let stdoutPipe = Pipe()
+        let stderrPipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: brewPath)
+        process.arguments = [command] + arguments
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+        process.environment = brewEnvironment()
+
+        stdoutPipe.fileHandleForReading.readabilityHandler = { fh in
+            let data = fh.availableData
+            if !data.isEmpty, let s = String(data: data, encoding: .utf8) {
+                DispatchQueue.main.async { onOutput(s) }
+            }
+        }
+        stderrPipe.fileHandleForReading.readabilityHandler = { fh in
+            let data = fh.availableData
+            if !data.isEmpty, let s = String(data: data, encoding: .utf8) {
+                DispatchQueue.main.async { onErrorOutput(s) }
+            }
+        }
+        process.terminationHandler = { p in
+            stdoutPipe.fileHandleForReading.readabilityHandler = nil
+            stderrPipe.fileHandleForReading.readabilityHandler = nil
+            DispatchQueue.main.async { onCompletion(p.terminationStatus) }
+        }
+        try? process.run()
+    }
+
+    private func brewEnvironment() -> [String: String] {
+        var env = ProcessInfo.processInfo.environment
+        var path = env["PATH"] ?? ""
+        if !path.contains("/opt/homebrew/bin") { path = "/opt/homebrew/bin:" + path }
+        if !path.contains("/usr/local/bin") { path = "/usr/local/bin:" + path }
+        env["PATH"] = path
+        return env
+    }
+
+    // MARK: - Packages (brew info --json=v2 --installed)
+
     @MainActor
     func refreshPackages() async throws {
-        logger.info("Refreshing packages list using 'brew list --formula'")
         isLoadingPackages = true
+        defer { isLoadingPackages = false }
         do {
-            let output = try await executeBrewCommand("list --formula")
-            let lines = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
-            // Create basic package objects - details would require `brew info` per package (slow)
-            self.packages = lines.map { name in 
-                HomebrewPackage(name: name, version: "", installed: true, dependencies: [], description: nil)
-            }
-            savePackagesToCache(self.packages)
-            logger.info("Successfully refreshed \(self.packages.count) packages (names only)")
+            let output = try await executeBrewCommandWithArgs(["info", "--json=v2", "--installed"])
+            packages = parsePackagesJSON(output)
+            savePackagesToCache(packages)
         } catch {
-            logger.error("Failed to refresh packages: \(error.localizedDescription)")
-            // Don't clear existing packages on failure, maybe show error in UI
+            logger.error("refreshPackages failed: \(error.localizedDescription)")
             throw error
         }
-        isLoadingPackages = false
     }
-    
+
+    private func parsePackagesJSON(_ json: String) -> [HomebrewPackage] {
+        guard let data = json.data(using: .utf8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let formulae = root["formulae"] as? [[String: Any]] else {
+            // Fallback: parse as plain list
+            return json.components(separatedBy: .newlines)
+                .filter { !$0.isEmpty }
+                .map { HomebrewPackage(name: $0, version: "", installed: true, dependencies: [], description: nil) }
+        }
+
+        return formulae.compactMap { formula -> HomebrewPackage? in
+            guard let name = formula["name"] as? String else { return nil }
+            let desc = formula["desc"] as? String
+            let homepage = formula["homepage"] as? String
+            let license = formula["license"] as? String
+            let tap = formula["tap"] as? String
+            let outdated = formula["outdated"] as? Bool ?? false
+
+            // Installed versions
+            let installedArr = formula["installed"] as? [[String: Any]] ?? []
+            let firstInstalled = installedArr.first
+            let version = firstInstalled?["version"] as? String ?? ""
+            let installedAsDep = firstInstalled?["installed_as_dependency"] as? Bool ?? false
+
+            // Install date from receipt
+            var installDate: Date? = nil
+            var installedSize: Int64? = nil
+            if let cellarPath = firstInstalled?["cellar"] as? String {
+                let versionPath = "\(cellarPath)/\(name)/\(version)"
+                let receiptPath = "\(versionPath)/INSTALL_RECEIPT.json"
+                if let receiptData = try? Data(contentsOf: URL(fileURLWithPath: receiptPath)),
+                   let receipt = try? JSONSerialization.jsonObject(with: receiptData) as? [String: Any],
+                   let dateStr = receipt["date_installed"] as? String {
+                    let fmt = ISO8601DateFormatter()
+                    installDate = fmt.date(from: dateStr)
+                }
+                if let size = directorySize(at: versionPath) {
+                    installedSize = size
+                }
+            }
+
+            // Dependencies
+            let deps = (formula["dependencies"] as? [String]) ?? []
+
+            // Latest version from versions
+            let versions = formula["versions"] as? [String: Any]
+            let latestVersion = versions?["stable"] as? String
+
+            return HomebrewPackage(
+                name: name,
+                version: version,
+                installed: true,
+                dependencies: deps,
+                description: desc,
+                homepage: homepage,
+                license: license,
+                tap: tap,
+                outdated: outdated,
+                latestVersion: latestVersion,
+                installedAsDependency: installedAsDep,
+                installDate: installDate,
+                installedSize: installedSize
+            )
+        }
+    }
+
     func savePackagesToCache(_ packages: [HomebrewPackage]) {
         if let data = try? JSONEncoder().encode(packages) {
             UserDefaults.standard.set(data, forKey: packagesCacheKey)
             UserDefaults.standard.set(Date(), forKey: packagesUpdateKey)
-        } else {
-             logger.error("Failed to encode packages for caching.")
         }
     }
-    
+
+    @discardableResult
     func loadPackagesFromCache() -> ([HomebrewPackage], Date?)? {
         guard let data = UserDefaults.standard.data(forKey: packagesCacheKey),
-              let pkgs = try? JSONDecoder().decode([HomebrewPackage].self, from: data) else { 
-            logger.info("No package cache found or failed to decode.")
-            return nil 
-        }
+              let pkgs = try? JSONDecoder().decode([HomebrewPackage].self, from: data) else { return nil }
         let update = UserDefaults.standard.object(forKey: packagesUpdateKey) as? Date
-        logger.info("Loaded \(pkgs.count) packages from cache.")
-        // Update published property on load
-        Task { @MainActor in 
-            self.packages = pkgs
-        }
+        Task { @MainActor in self.packages = pkgs }
         return (pkgs, update)
     }
-    
+
+    func updatePackage(_ package: HomebrewPackage) async throws {
+        try await executeBrewCommand("upgrade \(package.name)")
+        try await refreshPackages()
+    }
+
+    func uninstallPackage(_ package: HomebrewPackage) async throws {
+        try await executeBrewCommand("uninstall \(package.name)")
+        try await refreshPackages()
+    }
+
+    func installPackage(_ package: HomebrewPackage) async throws {
+        try await executeBrewCommand("install \(package.name)")
+        try await refreshPackages()
+    }
+
     @MainActor
-    func refreshServices() async throws {
-        logger.info("Refreshing services list")
+    func upgradeAll() async throws {
+        try await executeBrewCommand("upgrade")
+        try await refreshPackages()
+        try await refreshCasks()
+    }
+
+    // MARK: - Outdated
+
+    @MainActor
+    func refreshOutdated() async throws {
+        let output = try await executeBrewCommandWithArgs(["outdated", "--json=v2"])
+        outdatedPackages = parseOutdatedJSON(output)
+    }
+
+    private func parseOutdatedJSON(_ json: String) -> [OutdatedInfo] {
+        guard let data = json.data(using: .utf8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [] }
+        var result: [OutdatedInfo] = []
+        if let formulae = root["formulae"] as? [[String: Any]] {
+            for f in formulae {
+                guard let name = f["name"] as? String,
+                      let current = f["current_version"] as? String,
+                      let installed = (f["installed_versions"] as? [String])?.first else { continue }
+                result.append(OutdatedInfo(name: name, installedVersion: installed, currentVersion: current, isCask: false))
+            }
+        }
+        if let casks = root["casks"] as? [[String: Any]] {
+            for c in casks {
+                guard let name = c["name"] as? String,
+                      let current = c["current_version"] as? String,
+                      let installed = c["installed_versions"] as? String else { continue }
+                result.append(OutdatedInfo(name: name, installedVersion: installed, currentVersion: current, isCask: true))
+            }
+        }
+        return result
+    }
+
+    // MARK: - Casks (brew list --cask → brew info --json=v2 --cask <names>)
+
+    @MainActor
+    func refreshCasks() async throws {
+        isLoadingCasks = true
+        defer { isLoadingCasks = false }
         do {
-            let output = try await executeBrewCommand("services list")
-            self.services = parseServicesOutput(output)
-            saveServicesToCache(self.services)
-            logger.info("Successfully refreshed \(self.services.count) services")
+            // Step 1: get installed cask names
+            let listOutput = try await executeBrewCommand("list --cask")
+            let names = listOutput.components(separatedBy: .newlines).map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }.filter { !$0.isEmpty }
+
+            guard !names.isEmpty else {
+                casks = []
+                saveCasksToCache(casks)
+                return
+            }
+
+            // Step 2: fetch full info for all installed casks in one call
+            let infoOutput = try await executeBrewCommandWithArgs(
+                ["info", "--json=v2", "--cask"] + names
+            )
+            casks = parseCasksJSON(infoOutput)
+            saveCasksToCache(casks)
         } catch {
-            logger.error("Failed to refresh services: \(error.localizedDescription)")
+            logger.error("refreshCasks failed: \(error.localizedDescription)")
             throw error
         }
     }
-    
-    private func parseServicesOutput(_ output: String) -> [HomebrewService] {
-        var services: [HomebrewService] = []
-        let lines = output.components(separatedBy: .newlines)
-        
-        // Skip header line and empty lines
-        for line in lines.dropFirst() where !line.isEmpty {
-            let components = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-            guard components.count >= 2 else { continue }
-            
-            let name = components[0]
-            let status = ServiceStatus(rawValue: components[1]) ?? .unknown
-            let user = components.count > 2 ? components[2] : nil
-            let filePath = components.count > 3 ? components[3] : nil
-            
-            services.append(HomebrewService(name: name, status: status, user: user, filePath: filePath))
+
+    private func parseCasksJSON(_ json: String) -> [HomebrewCask] {
+        guard let data = json.data(using: .utf8),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let casksArr = root["casks"] as? [[String: Any]] else {
+            return json.components(separatedBy: .newlines)
+                .filter { !$0.isEmpty }
+                .map { HomebrewCask(name: $0) }
         }
-        
-        return services
+
+        return casksArr.compactMap { cask -> HomebrewCask? in
+            guard let token = cask["token"] as? String else { return nil }
+            let version = cask["version"] as? String
+            let desc = cask["desc"] as? String
+            let homepage = cask["homepage"] as? String
+            let tap = cask["tap"] as? String
+            let outdated = cask["outdated"] as? Bool ?? false
+            let autoUpdates = cask["auto_updates"] as? Bool ?? false
+
+            // Installed path and size
+            var installedPath: String? = nil
+            var installedSize: Int64? = nil
+            if let artifacts = cask["artifacts"] as? [[String: Any]] {
+                for artifact in artifacts {
+                    if let appArr = artifact["app"] as? [String], let appName = appArr.first {
+                        installedPath = "/Applications/\(appName)"
+                        if let size = directorySize(at: "/Applications/\(appName)") {
+                            installedSize = size
+                        }
+                        break
+                    }
+                }
+            }
+
+            // Latest version
+            let latestVersion = (cask["version"] as? String)
+
+            return HomebrewCask(
+                name: token,
+                version: version,
+                description: desc,
+                homepage: homepage,
+                tap: tap,
+                outdated: outdated,
+                latestVersion: latestVersion,
+                installedPath: installedPath,
+                autoUpdates: autoUpdates,
+                installedSize: installedSize
+            )
+        }
     }
-    
+
+    func saveCasksToCache(_ casks: [HomebrewCask]) {
+        if let data = try? JSONEncoder().encode(casks) {
+            UserDefaults.standard.set(data, forKey: casksCacheKey)
+            UserDefaults.standard.set(Date(), forKey: casksUpdateKey)
+        }
+    }
+
+    @discardableResult
+    func loadCasksFromCache() -> ([HomebrewCask], Date?)? {
+        guard let data = UserDefaults.standard.data(forKey: casksCacheKey),
+              let cks = try? JSONDecoder().decode([HomebrewCask].self, from: data) else { return nil }
+        let update = UserDefaults.standard.object(forKey: casksUpdateKey) as? Date
+        Task { @MainActor in self.casks = cks }
+        return (cks, update)
+    }
+
+    // MARK: - Services
+
+    @MainActor
+    func refreshServices() async throws {
+        do {
+            let output = try await executeBrewCommand("services list")
+            services = parseServicesOutput(output)
+            saveServicesToCache(services)
+        } catch {
+            logger.error("refreshServices failed: \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    private func parseServicesOutput(_ output: String) -> [HomebrewService] {
+        output.components(separatedBy: .newlines)
+            .dropFirst()
+            .filter { !$0.isEmpty }
+            .compactMap { line -> HomebrewService? in
+                let parts = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+                guard parts.count >= 2 else { return nil }
+                let name = parts[0]
+                let status = ServiceStatus(rawValue: parts[1]) ?? .unknown
+                let user = parts.count > 2 ? parts[2] : nil
+                let filePath = parts.count > 3 ? parts[3] : nil
+                // pid is sometimes in column index 4 in newer brew versions
+                let pidStr = parts.count > 4 ? parts[4] : nil
+                let pid = pidStr.flatMap { Int($0) }
+                return HomebrewService(name: name, status: status, user: user, filePath: filePath, pid: pid)
+            }
+    }
+
     func saveServicesToCache(_ services: [HomebrewService]) {
         if let data = try? JSONEncoder().encode(services) {
             UserDefaults.standard.set(data, forKey: "cachedServices")
             UserDefaults.standard.set(Date(), forKey: "cachedServicesUpdate")
         }
     }
-    
+
+    @discardableResult
     func loadServicesFromCache() -> ([HomebrewService], Date?)? {
         guard let data = UserDefaults.standard.data(forKey: "cachedServices"),
-              let services = try? JSONDecoder().decode([HomebrewService].self, from: data) else { return nil }
+              let svcs = try? JSONDecoder().decode([HomebrewService].self, from: data) else { return nil }
         let update = UserDefaults.standard.object(forKey: "cachedServicesUpdate") as? Date
-        return (services, update)
+        Task { @MainActor in self.services = svcs }
+        return (svcs, update)
     }
-    
+
+    @MainActor
+    func startService(_ service: HomebrewService) async throws {
+        try await runServiceCommand("start", for: service)
+        try await refreshServices()
+    }
+
+    @MainActor
+    func stopService(_ service: HomebrewService) async throws {
+        try await runServiceCommand("stop", for: service)
+        try await refreshServices()
+    }
+
+    @MainActor
+    func restartService(_ service: HomebrewService) async throws {
+        try await runServiceCommand("restart", for: service)
+        try await refreshServices()
+    }
+
+    private func runServiceCommand(_ command: String, for service: HomebrewService) async throws {
+        guard let brewPath = homebrewPath else {
+            throw HomebrewError.invalidState("Homebrew path not found")
+        }
+        let process = Process()
+        let pipe = Pipe()
+        process.executableURL = URL(fileURLWithPath: brewPath)
+        process.arguments = ["services", command, service.name]
+        process.standardOutput = pipe
+        process.standardError = pipe
+        process.environment = brewEnvironment()
+        try process.run()
+        process.waitUntilExit()
+        if process.terminationStatus != 0 {
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "HomebrewManager", code: Int(process.terminationStatus),
+                          userInfo: [NSLocalizedDescriptionKey: msg])
+        }
+    }
+
+    // MARK: - Taps
+
     @MainActor
     func refreshTaps() async throws {
-        logger.info("Refreshing taps list")
+        isLoadingTaps = true
+        defer { isLoadingTaps = false }
         do {
             let output = try await executeBrewCommand("tap")
-            let lines = output.components(separatedBy: .newlines)
+            let lines = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
             var newTaps: [HomebrewTap] = []
             var newTapInfos: [String: TapInfo] = [:]
-            
-            for line in lines where !line.isEmpty {
-                let components = line.components(separatedBy: "/")
-                guard components.count == 2 else {
-                    logger.warning("Skipping invalid tap line: \(line)")
-                    continue
-                }
-                
-                let name = components[0]
-                let repo = components[1]
-                let tapName = "\(name)/\(repo)"
-                let url = "https://github.com/\(name)/homebrew-\(repo)"
-                logger.debug("Processing tap: \(tapName)")
-                
-                let tap = HomebrewTap(
-                    name: tapName,
-                    url: url,
-                    installed: true
-                )
-                newTaps.append(tap)
-                
-                // 获取 tap-info
-                do {
-                    let infoOutput = try await executeBrewCommand("tap-info \(tapName)")
-                    logger.debug("Raw tap-info output for \(tapName): \(infoOutput)")
-                    
+
+            for line in lines {
+                let parts = line.components(separatedBy: "/")
+                guard parts.count == 2 else { continue }
+                let tapName = line.trimmingCharacters(in: .whitespaces)
+                let url = "https://github.com/\(parts[0])/homebrew-\(parts[1])"
+                newTaps.append(HomebrewTap(name: tapName, url: url, installed: true))
+
+                if let infoOutput = try? await executeBrewCommand("tap-info \(tapName)") {
                     let parsed = parseTapInfo(infoOutput)
-                    logger.debug("Parsed tap-info for \(tapName): status=\(parsed.status ?? "nil"), commands=\(parsed.commands ?? "nil"), casks=\(parsed.casks ?? "nil")")
-                    
-                    let tapInfo = TapInfo(
-                        name: tapName,
-                        url: url,
-                        installed: true,
-                        info: infoOutput,
-                        status: parsed.status,
-                        commands: parsed.commands,
-                        casks: parsed.casks,
-                        path: parsed.path,
-                        head: parsed.head,
-                        lastCommit: parsed.lastCommit,
-                        repoURL: parsed.repoURL,
-                        branch: parsed.branch,
-                        filesPath: parsed.filesPath,
-                        filesCount: parsed.filesCount,
-                        filesSize: parsed.filesSize
+                    newTapInfos[tapName] = TapInfo(
+                        name: tapName, url: url, installed: true, info: infoOutput,
+                        status: parsed.status, commands: parsed.commands, casks: parsed.casks,
+                        path: parsed.path, head: parsed.head, lastCommit: parsed.lastCommit,
+                        repoURL: parsed.repoURL, branch: parsed.branch,
+                        filesPath: parsed.filesPath, filesCount: parsed.filesCount, filesSize: parsed.filesSize
                     )
-                    newTapInfos[tapName] = tapInfo
-                    logger.debug("Successfully created TapInfo for \(tapName)")
-                } catch {
-                    logger.error("Failed to get tap-info for \(tapName): \(error.localizedDescription)")
-                    // 创建一个基本的 TapInfo，至少保留基本信息
-                    let basicTapInfo = TapInfo(
-                        name: tapName,
-                        url: url,
-                        installed: true,
-                        info: "Failed to fetch info: \(error.localizedDescription)",
-                        status: nil,
-                        commands: nil,
-                        casks: nil,
-                        path: nil,
-                        head: nil,
-                        lastCommit: nil,
-                        repoURL: nil,
-                        branch: nil,
-                        filesPath: nil,
-                        filesCount: nil,
-                        filesSize: nil
+                } else {
+                    newTapInfos[tapName] = TapInfo(
+                        name: tapName, url: url, installed: true, info: "",
+                        status: nil, commands: nil, casks: nil, path: nil, head: nil,
+                        lastCommit: nil, repoURL: nil, branch: nil,
+                        filesPath: nil, filesCount: nil, filesSize: nil
                     )
-                    newTapInfos[tapName] = basicTapInfo
                 }
             }
-            
-            // 更新状态和保存缓存
-            self.taps = newTaps
-            self.tapInfos = newTapInfos
+            taps = newTaps
+            tapInfos = newTapInfos
             saveTapInfosToCache(newTapInfos)
-            
-            logger.info("Successfully refreshed \(self.taps.count) taps and \(newTapInfos.count) tapInfos")
         } catch {
-            logger.error("Failed to refresh taps: \(error.localizedDescription)")
+            logger.error("refreshTaps failed: \(error.localizedDescription)")
             throw error
         }
     }
-    
-    // 解析 tap-info 输出
+
     func parseTapInfo(_ output: String) -> (status: String?, commands: String?, casks: String?, path: String?, head: String?, lastCommit: String?, repoURL: String?, branch: String?, filesPath: String?, filesCount: Int?, filesSize: String?) {
-        let lines = output.components(separatedBy: .newlines)
         var status: String? = nil
         var commands: String? = nil
         var casks: String? = nil
@@ -448,260 +605,54 @@ class HomebrewManager: ObservableObject {
         var filesPath: String? = nil
         var filesCount: Int? = nil
         var filesSize: String? = nil
-        
-        logger.debug("Parsing tap info output with \(lines.count) lines")
-        
-        for line in lines {
-            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-            logger.debug("Processing line: \(trimmedLine)")
-            
-            // 处理状态行，格式如 "zurawiki/brews: Installed"
-            if trimmedLine.contains(": Installed") {
-                status = "Installed"
-            }
-            // 处理命令行，格式如 "2 formulae"
-            else if trimmedLine.hasSuffix("formulae") {
-                commands = trimmedLine
-            }
-            // 处理路径和文件信息，格式如 "/opt/homebrew/Library/Taps/zurawiki/homebrew-brews (83 files, 65.7KB)"
-            else if trimmedLine.hasPrefix("/") {
-                let components = trimmedLine.components(separatedBy: " (")
-                if components.count == 2 {
-                    path = components[0]
-                    let fileInfo = components[1].replacingOccurrences(of: ")", with: "")
-                    let fileComponents = fileInfo.components(separatedBy: ", ")
-                    if fileComponents.count == 2 {
-                        if let count = fileComponents[0].components(separatedBy: " ").first {
-                            filesCount = Int(count)
-                        }
-                        filesSize = fileComponents[1]
+
+        for line in output.components(separatedBy: .newlines) {
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.contains(": Installed") { status = "Installed" }
+            else if t.hasSuffix("formulae") || t.hasSuffix("formula") { commands = t }
+            else if t.hasSuffix("casks") || t.hasSuffix("cask") { casks = t }
+            else if t.hasPrefix("/") {
+                let comps = t.components(separatedBy: " (")
+                if comps.count == 2 {
+                    path = comps[0]
+                    filesPath = comps[0]
+                    let info = comps[1].replacingOccurrences(of: ")", with: "")
+                    let parts = info.components(separatedBy: ", ")
+                    if parts.count == 2 {
+                        filesCount = Int(parts[0].components(separatedBy: " ").first ?? "")
+                        filesSize = parts[1]
                     }
                 }
             }
-            // 处理仓库 URL，格式如 "From: https://github.com/zurawiki/homebrew-brews"
-            else if trimmedLine.hasPrefix("From:") {
-                repoURL = trimmedLine.replacingOccurrences(of: "From:", with: "").trimmingCharacters(in: .whitespaces)
-            }
-            // 处理 HEAD，格式如 "HEAD: 1052ce0405fe5b2cc82ba8ac86e9b57b14b0ec30"
-            else if trimmedLine.hasPrefix("HEAD:") {
-                head = trimmedLine.replacingOccurrences(of: "HEAD:", with: "").trimmingCharacters(in: .whitespaces)
-            }
-            // 处理最后提交时间，格式如 "last commit: 7 months ago"
-            else if trimmedLine.hasPrefix("last commit:") {
-                lastCommit = trimmedLine.replacingOccurrences(of: "last commit:", with: "").trimmingCharacters(in: .whitespaces)
-            }
-            // 处理分支信息，格式如 "branch: main"
-            else if trimmedLine.hasPrefix("branch:") {
-                branch = trimmedLine.replacingOccurrences(of: "branch:", with: "").trimmingCharacters(in: .whitespaces)
-            }
+            else if t.hasPrefix("From:") { repoURL = t.replacingOccurrences(of: "From:", with: "").trimmingCharacters(in: .whitespaces) }
+            else if t.hasPrefix("HEAD:") { head = t.replacingOccurrences(of: "HEAD:", with: "").trimmingCharacters(in: .whitespaces) }
+            else if t.hasPrefix("last commit:") { lastCommit = t.replacingOccurrences(of: "last commit:", with: "").trimmingCharacters(in: .whitespaces) }
+            else if t.hasPrefix("branch:") { branch = t.replacingOccurrences(of: "branch:", with: "").trimmingCharacters(in: .whitespaces) }
         }
-        
-        // 从路径中提取 files path
-        if let tapPath = path {
-            filesPath = tapPath
-        }
-        
-        logger.debug("""
-            Parsed tap info results:
-            - Status: \(status ?? "nil")
-            - Commands: \(commands ?? "nil")
-            - Casks: \(casks ?? "nil")
-            - Path: \(path ?? "nil")
-            - Head: \(head ?? "nil")
-            - Last Commit: \(lastCommit ?? "nil")
-            - Repo URL: \(repoURL ?? "nil")
-            - Branch: \(branch ?? "nil")
-            - Files Path: \(filesPath ?? "nil")
-            - Files Count: \(String(describing: filesCount))
-            - Files Size: \(filesSize ?? "nil")
-            """)
-        
         return (status, commands, casks, path, head, lastCommit, repoURL, branch, filesPath, filesCount, filesSize)
     }
-    
+
     func saveTapInfosToCache(_ infos: [String: TapInfo]) {
         if let data = try? JSONEncoder().encode(infos) {
             UserDefaults.standard.set(data, forKey: "cachedTapInfos")
         }
     }
-    
+
     func loadTapInfosFromCache() -> [String: TapInfo] {
         guard let data = UserDefaults.standard.data(forKey: "cachedTapInfos"),
               let infos = try? JSONDecoder().decode([String: TapInfo].self, from: data) else { return [:] }
         return infos
     }
-    
-    func updatePackage(_ package: HomebrewPackage) async throws {
-        logger.info("Updating package: \(package.name)")
-        do {
-            try await executeBrewCommand("upgrade \(package.name)")
-            try await refreshPackages()
-            logger.info("Successfully updated package: \(package.name)")
-        } catch {
-            logger.error("Failed to update package \(package.name): \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    func installPackage(_ package: HomebrewPackage) async throws {
-        logger.info("Installing package: \(package.name)")
-        do {
-            try await executeBrewCommand("install \(package.name)")
-            try await refreshPackages()
-            logger.info("Successfully installed package: \(package.name)")
-        } catch {
-            logger.error("Failed to install package \(package.name): \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    func uninstallPackage(_ package: HomebrewPackage) async throws {
-        logger.info("Uninstalling package: \(package.name)")
-        do {
-            try await executeBrewCommand("uninstall \(package.name)")
-            try await refreshPackages()
-            logger.info("Successfully uninstalled package: \(package.name)")
-        } catch {
-            logger.error("Failed to uninstall package \(package.name): \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    func addTap(_ tap: HomebrewTap) async throws {
-        logger.info("Adding tap: \(tap.name)")
-        do {
-            try await executeBrewCommand("tap \(tap.name) \(tap.url)")
-            try await refreshTaps()
-            logger.info("Successfully added tap: \(tap.name)")
-        } catch {
-            logger.error("Failed to add tap \(tap.name): \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    func removeTap(_ tap: HomebrewTap) async throws {
-        logger.info("Removing tap: \(tap.name)")
-        do {
-            try await executeBrewCommand("untap \(tap.name)")
-            try await refreshTaps()
-            logger.info("Successfully removed tap: \(tap.name)")
-        } catch {
-            logger.error("Failed to remove tap \(tap.name): \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    @MainActor
-    func startService(_ service: HomebrewService) async throws {
-        print("开始启动服务: \(service.name)")
-        try await runServiceCommand("start", for: service)
-        try await refreshServices()
-        print("服务启动完成: \(service.name)")
-    }
-    
-    @MainActor
-    func stopService(_ service: HomebrewService) async throws {
-        print("开始停止服务: \(service.name)")
-        try await runServiceCommand("stop", for: service)
-        try await refreshServices()
-        print("服务停止完成: \(service.name)")
-    }
-    
-    private func runServiceCommand(_ command: String, for service: HomebrewService) async throws {
-        guard let currentBrewPath = self.homebrewPath else { // Use found path
-             logger.error("Homebrew path is not set, cannot run service command.")
-             throw HomebrewError.invalidState("Homebrew path not found")
-         }
-        let process = Process()
-        let pipe = Pipe()
-        
-        process.executableURL = URL(fileURLWithPath: currentBrewPath) // Use found path
-        process.arguments = ["services", command, service.name]
-        process.standardOutput = pipe
-        process.standardError = pipe
-        
-        // 设置环境变量
-        var env = ProcessInfo.processInfo.environment
-        if var path = env["PATH"] {
-            // 确保 /opt/homebrew/bin 和 /usr/local/bin 在 PATH 中
-            if !path.contains("/opt/homebrew/bin") {
-                path = "/opt/homebrew/bin:" + path
-            }
-            if !path.contains("/usr/local/bin") {
-                path = "/usr/local/bin:" + path
-            }
-            env["PATH"] = path
-        } else {
-            env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-        }
-        process.environment = env
-        
-        do {
-            print("执行服务命令: brew services \(command) \(service.name)")
-            try process.run()
-            process.waitUntilExit()
-            
-            if process.terminationStatus != 0 {
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                if let error = String(data: data, encoding: .utf8) {
-                    print("服务命令执行失败: \(error)")
-                    throw NSError(domain: "HomebrewManager",
-                                code: Int(process.terminationStatus),
-                                userInfo: [NSLocalizedDescriptionKey: error])
-                }
-            }
-            print("服务命令执行成功")
-        } catch {
-            print("服务命令执行错误: \(error)")
-            throw error
-        }
-    }
-    
-    func backupConfiguration() async throws -> Data {
-        logger.info("Creating configuration backup")
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let backup = BackupData(
-                packages: packages,
-                services: services,
-                taps: taps
-            )
-            let data = try encoder.encode(backup)
-            logger.info("Successfully created configuration backup")
-            return data
-        } catch {
-            logger.error("Failed to create configuration backup: \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
-    func restoreConfiguration(from data: Data) async throws {
-        logger.info("Restoring configuration from backup")
-        do {
-            let decoder = JSONDecoder()
-            let backup = try decoder.decode(BackupData.self, from: data)
-            await MainActor.run {
-                packages = backup.packages
-                services = backup.services
-                taps = backup.taps
-            }
-            logger.info("Successfully restored configuration from backup")
-        } catch {
-            logger.error("Failed to restore configuration from backup: \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
+
     func loadTapsFromCache() -> ([HomebrewTap], Date?)? {
         guard let data = UserDefaults.standard.data(forKey: "cachedTaps"),
-              let loadedTaps = try? JSONDecoder().decode([HomebrewTap].self, from: data) else { return nil }
+              let loaded = try? JSONDecoder().decode([HomebrewTap].self, from: data) else { return nil }
         let update = UserDefaults.standard.object(forKey: "cachedTapsUpdate") as? Date
-         Task { @MainActor in 
-            self.taps = loadedTaps
+        Task { @MainActor in
+            self.taps = loaded
             self.tapInfos = loadTapInfosFromCache()
-         }
-        return (loadedTaps, update)
+        }
+        return (loaded, update)
     }
 
     func saveTapsToCache(_ taps: [HomebrewTap], lastUpdate: Date?) {
@@ -713,155 +664,114 @@ class HomebrewManager: ObservableObject {
         }
     }
 
-    // --- New Streaming Method --- 
-    @MainActor // Ensure callbacks updating UI happen on main thread if possible
-    func streamBrewCommand(
-        _ command: String,
-        arguments: [String] = [],
-        onOutput: @escaping (String) -> Void, // stdout chunks
-        onErrorOutput: @escaping (String) -> Void, // stderr chunks
-        onCompletion: @escaping (Int32) -> Void // terminationStatus
-    ) {
-        guard let currentBrewPath = self.homebrewPath else { // Use found path
-            onErrorOutput("Homebrew path not found.\n")
-            onCompletion(-1) 
-            return
-        }
-        
-        let process = Process()
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-        
-        process.executableURL = URL(fileURLWithPath: currentBrewPath) // Use found path
-        var allArguments = [command]
-        allArguments.append(contentsOf: arguments)
-        process.arguments = allArguments
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
-        
-        // Make sure handlers are released
-        var stdoutHandler: NSObjectProtocol?
-        
-        stdoutPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-            let data = fileHandle.availableData
-            if data.isEmpty { // EOF
-                // print("STDOUT EOF") // Debug
-                // No need to call onCompletion here, terminationHandler handles it
-                // stdoutPipe.fileHandleForReading.readabilityHandler = nil
-                // if let handler = stdoutHandler { NotificationCenter.default.removeObserver(handler) }
-            } else {
-                if let output = String(data: data, encoding: .utf8) {
-                    // print("STDOUT Chunk: \(output.prefix(50))...") // Debug
-                    DispatchQueue.main.async {
-                        onOutput(output)
-                    }
-                }
-            }
-        }
-        
-        stderrPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-            let data = fileHandle.availableData
-            if data.isEmpty { // EOF
-                 // print("STDERR EOF") // Debug
-                 // stderrPipe.fileHandleForReading.readabilityHandler = nil
-                 // if let handler = stderrHandler { NotificationCenter.default.removeObserver(handler) }
-            } else {
-                if let errorOutput = String(data: data, encoding: .utf8) {
-                    // print("STDERR Chunk: \(errorOutput.prefix(50))...") // Debug
-                     DispatchQueue.main.async {
-                         onErrorOutput(errorOutput)
-                     }
-                }
-            }
-        }
-        
-        process.terminationHandler = { terminatedProcess in
-            // Ensure handlers are removed *after* termination
-            stdoutPipe.fileHandleForReading.readabilityHandler = nil
-            stderrPipe.fileHandleForReading.readabilityHandler = nil
-            if let handler = stdoutHandler { NotificationCenter.default.removeObserver(handler) }
-            // print("Process terminated with status: \(terminatedProcess.terminationStatus)") // Debug
-            DispatchQueue.main.async {
-                 onCompletion(terminatedProcess.terminationStatus)
-            }
-        }
-        
-        do {
-            try process.run()
-            // Add observers for background notifications if needed, though readabilityHandler is usually sufficient
-            // stdoutHandler = NotificationCenter.default.addObserver(forName: .NSFileHandleReadCompletion, object: stdoutPipe.fileHandleForReading, queue: nil) { _ in stdoutPipe.fileHandleForReading.readInBackgroundAndNotify() }
-            // stderrHandler = NotificationCenter.default.addObserver(forName: .NSFileHandleReadCompletion, object: stderrPipe.fileHandleForReading, queue: nil) { _ in stderrPipe.fileHandleForReading.readInBackgroundAndNotify() }
-            // stdoutPipe.fileHandleForReading.readInBackgroundAndNotify()
-            // stderrPipe.fileHandleForReading.readInBackgroundAndNotify()
-
-        } catch {
-            DispatchQueue.main.async {
-                 onErrorOutput("Failed to launch process: \(error.localizedDescription)\n")
-                 onCompletion(-1) // Indicate an error
-            }
-        }
-    }
-    // --- End New Streaming Method ---
-
-    @MainActor
-    func refreshCasks() async throws {
-        logger.info("Refreshing casks list using 'brew list --cask'")
-        isLoadingCasks = true
-        do {
-            let output = try await executeBrewCommand("list --cask")
-            let lines = output.components(separatedBy: .newlines).filter { !$0.isEmpty }
-            self.casks = lines.map { HomebrewCask(name: $0) }
-            saveCasksToCache(self.casks)
-            logger.info("Successfully refreshed \(self.casks.count) casks")
-        } catch {
-             logger.error("Failed to refresh casks: \(error.localizedDescription)")
-             throw error
-        }
-        isLoadingCasks = false
+    func addTap(_ tap: HomebrewTap) async throws {
+        let cmd = tap.url.isEmpty ? "tap \(tap.name)" : "tap \(tap.name) \(tap.url)"
+        try await executeBrewCommand(cmd)
+        try await refreshTaps()
     }
 
-    func saveCasksToCache(_ casks: [HomebrewCask]) {
-        if let data = try? JSONEncoder().encode(casks) {
-            UserDefaults.standard.set(data, forKey: casksCacheKey)
-            UserDefaults.standard.set(Date(), forKey: casksUpdateKey)
-        } else {
-             logger.error("Failed to encode casks for caching.")
+    func removeTap(_ tap: HomebrewTap) async throws {
+        try await executeBrewCommand("untap \(tap.name)")
+        try await refreshTaps()
+    }
+
+    // MARK: - Cleanup
+
+    /// Returns items that would be removed by `brew cleanup`
+    func fetchCleanupPreview() async throws -> [CleanupItem] {
+        let output = try await executeBrewCommandWithArgs(["cleanup", "--dry-run"])
+        return parseCleanupOutput(output)
+    }
+
+    func runCleanup() async throws -> String {
+        try await executeBrewCommand("cleanup")
+    }
+
+    private func parseCleanupOutput(_ output: String) -> [CleanupItem] {
+        output.components(separatedBy: .newlines)
+            .filter { $0.hasPrefix("Would remove:") || $0.hasPrefix("Removing:") }
+            .compactMap { line -> CleanupItem? in
+                let path = line
+                    .replacingOccurrences(of: "Would remove: ", with: "")
+                    .replacingOccurrences(of: "Removing: ", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                guard !path.isEmpty else { return nil }
+                let url = URL(fileURLWithPath: path)
+                let version = url.lastPathComponent
+                let name = url.deletingLastPathComponent().lastPathComponent
+                let size = directorySize(at: path)
+                return CleanupItem(name: name, version: version, path: path, size: size)
+            }
+    }
+
+    // MARK: - Autoremove
+
+    func fetchAutoremovePreview() async throws -> [String] {
+        let output = try await executeBrewCommandWithArgs(["autoremove", "--dry-run"])
+        return output.components(separatedBy: .newlines)
+            .filter { $0.contains("Would uninstall") || $0.contains("autoremove") }
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    func runAutoremove() async throws -> String {
+        try await executeBrewCommand("autoremove")
+    }
+
+    // MARK: - Backup / Restore
+
+    func backupConfiguration() async throws -> Data {
+        let backup = BackupData(packages: packages, casks: casks, services: services, taps: taps)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(backup)
+    }
+
+    func restoreConfiguration(from data: Data) async throws {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let backup = try decoder.decode(BackupData.self, from: data)
+        await MainActor.run {
+            packages = backup.packages
+            casks = backup.casks
+            services = backup.services
+            taps = backup.taps
         }
     }
 
-    func loadCasksFromCache() -> ([HomebrewCask], Date?)? {
-         guard let data = UserDefaults.standard.data(forKey: casksCacheKey),
-              let cks = try? JSONDecoder().decode([HomebrewCask].self, from: data) else { 
-            logger.info("No cask cache found or failed to decode.")
-            return nil 
+    // MARK: - Helpers
+
+    private func directorySize(at path: String) -> Int64? {
+        guard let enumerator = FileManager.default.enumerator(
+            at: URL(fileURLWithPath: path),
+            includingPropertiesForKeys: [.fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else { return nil }
+        var total: Int64 = 0
+        for case let url as URL in enumerator {
+            if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize {
+                total += Int64(size)
+            }
         }
-        let update = UserDefaults.standard.object(forKey: casksUpdateKey) as? Date
-        logger.info("Loaded \(cks.count) casks from cache.")
-         Task { @MainActor in 
-            self.casks = cks
-        }
-        return (cks, update)
+        return total > 0 ? total : nil
     }
 }
 
-// 错误类型
+// MARK: - Errors
 
 enum HomebrewError: LocalizedError {
     case installationFailed(String)
     case commandFailed(String, Int32)
     case parsingFailed(String)
     case invalidState(String)
-    
+
     var errorDescription: String? {
         switch self {
-        case .installationFailed(let message):
-            return "Homebrew 安装失败: \(message)"
-        case .commandFailed(let command, let code):
-            return "命令 '\(command)' 执行失败，退出码 \(code)"
-        case .parsingFailed(let message):
-            return "解析输出失败: \(message)"
-        case .invalidState(let message):
-            return "无效状态: \(message)"
+        case .installationFailed(let m): return "Installation failed: \(m)"
+        case .commandFailed(let cmd, let code): return "Command '\(cmd)' failed with exit code \(code)"
+        case .parsingFailed(let m): return "Parsing failed: \(m)"
+        case .invalidState(let m): return "Invalid state: \(m)"
         }
     }
-} 
+}
